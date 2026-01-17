@@ -8,6 +8,8 @@ import {
   MenubarShortcut,
   MenubarTrigger,
 } from "@/components/ui/menubar"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const TitleBar: React.FC = () => {
     return (
@@ -70,8 +72,46 @@ const TitleBar: React.FC = () => {
                                 </MenubarContent>
                             </MenubarMenu>
                             */}
+                            <MenubarMenu>
+                                <MenubarTrigger>View</MenubarTrigger>
+                                <MenubarContent>
+                                <MenubarItem>Cube</MenubarItem>
+                                <MenubarItem>Sphere</MenubarItem>
+                                </MenubarContent>
+                            </MenubarMenu>
+
+                            <MenubarMenu>
+                                <MenubarTrigger>Help</MenubarTrigger>
+                                <MenubarContent>
+                                <MenubarItem>Documentation</MenubarItem>
+                                </MenubarContent>
+                            </MenubarMenu>
+
+                            <MenubarMenu>
+                                <MenubarTrigger>Options</MenubarTrigger>
+                                <MenubarContent>
+                                <MenubarItem>Reset position</MenubarItem>
+                                </MenubarContent>
+                            </MenubarMenu>
                         </Menubar>
                     </nav>
+                </div>
+
+                <div className='ml-auto'>
+                    <Button 
+                        variant="secondary" 
+                        size="lg" 
+                        className='bg-slate-200 hover:bg-slate-300'
+                        onClick={() => {
+                            window.open("https://github.com/CTRL-Florian/Bachelorproef-Scene-aware-Collaborative-3D-Editor", "_blank", "noreferrer")
+                        }}
+                    >
+                        Source
+                        <Avatar>
+                            <AvatarImage src="https://avatars.githubusercontent.com/u/181760690?v=4&size=64" />
+                            <AvatarFallback>CTRL</AvatarFallback>
+                        </Avatar>
+                    </Button>
                 </div>
             </div>
         </header>
