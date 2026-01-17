@@ -1,13 +1,21 @@
-import Box from '@/objects/Box'
 import { Canvas } from '@react-three/fiber';
+import { KeyboardControls } from '@react-three/drei'
+
+import SceneSettings from '@/playground/SceneSettings';
+import SceneAxes from '@/playground/SceneAxes';
+import SceneCamera from '@/playground/SceneCamera';
+import SceneContent from '@/playground/SceneContent';
 
 const ViewPort: React.FC = () => {
     return (
-        <Canvas>
-            <color attach="background" args={['#9ca3af']} />
-            <ambientLight intensity={0.5} />
-            <Box position={[0, 0, 0]} />
-        </Canvas>
+        <KeyboardControls map={[{ name: 'reset', keys: ['r', 'R']}]}>
+            <Canvas>
+                <SceneSettings />
+                <SceneCamera />
+                <SceneAxes />
+                <SceneContent />
+            </Canvas>
+        </KeyboardControls>
     );
 };
 
