@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 
 interface MoveBoxPopupProps {
   x: number;
@@ -37,41 +36,52 @@ const MoveBoxPopup: React.FC<MoveBoxPopupProps> = ({ x, y, boxId, onMove, onClos
   };
 
   return (
-    <div ref={ref} data-submenu="true" style={{ position: "fixed", top: y, left: x, zIndex: 1100 }}>
-      <Card style={{ background: "#fff", minWidth: 250, padding: 16 }}>
-        <div style={{ fontWeight: "bold", marginBottom: 8 }}>Move Box: {boxId}</div>
-        <div style={{ marginBottom: 8, display: "flex", gap: 8 }}>
-          <Button size="sm" variant={mode === "offset" ? "default" : "outline"} onClick={() => setMode("offset")}>Offset</Button>
-          <Button size="sm" variant={mode === "absolute" ? "default" : "outline"} onClick={() => setMode("absolute")}>Absolute</Button>
+    <div ref={ref} data-submenu="true" style={{ position: "fixed", top: (() => {
+      let adjustedY = y;
+      if (adjustedY + 300 > window.innerHeight) {
+        adjustedY = window.innerHeight - 300 - 10;
+      }
+      return adjustedY;
+    })(), left: (() => {
+      let adjustedX = x;
+      if (adjustedX + 200 > window.innerWidth) {
+        adjustedX = window.innerWidth - 200 - 10;
+      }
+      return adjustedX;
+    })(), zIndex: 1100 }}>
+      <div style={{ background: "#fff", minWidth: 200, padding: 12, border: "none", boxShadow: "0 2px 8px rgba(0,0,0,0.12)", borderRadius: 6 }}>
+        <div style={{ fontWeight: "bold", marginBottom: 4, fontSize: 13 }}>Move: {boxId}</div>
+        <div style={{ marginBottom: 6, display: "flex", gap: 4 }}>
+          <Button size="sm" variant={mode === "offset" ? "default" : "outline"} onClick={() => setMode("offset")} style={{ fontSize: 11, padding: "2px 6px", height: "auto" }}>Offset</Button>
+          <Button size="sm" variant={mode === "absolute" ? "default" : "outline"} onClick={() => setMode("absolute")} style={{ fontSize: 11, padding: "2px 6px", height: "auto" }}>Absolute</Button>
         </div>
         {mode === "offset" ? (
           <>
-            <div style={{ marginBottom: 8 }}>
-              <label>X Offset: <input type="number" value={offset[0]} onChange={e => setOffset([Number(e.target.value), offset[1], offset[2]])} style={{ width: 60, marginLeft: 4 }}/></label>
+            <div style={{ marginBottom: 2 }}>
+              <label style={{ fontSize: 12 }}>X: <input type="number" value={offset[0]} onChange={e => setOffset([Number(e.target.value), offset[1], offset[2]])} style={{ width: 50, marginLeft: 4, fontSize: 12 }}/></label>
             </div>
-            <div style={{ marginBottom: 8 }}>
-              <label>Y Offset: <input type="number" value={offset[1]} onChange={e => setOffset([offset[0], Number(e.target.value), offset[2]])} style={{ width: 60, marginLeft: 4 }}/></label>
+            <div style={{ marginBottom: 2 }}>
+              <label style={{ fontSize: 12 }}>Y: <input type="number" value={offset[1]} onChange={e => setOffset([offset[0], Number(e.target.value), offset[2]])} style={{ width: 50, marginLeft: 4, fontSize: 12 }}/></label>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label>Z Offset: <input type="number" value={offset[2]} onChange={e => setOffset([offset[0], offset[1], Number(e.target.value)])} style={{ width: 60, marginLeft: 4 }}/></label>
+            <div style={{ marginBottom: 6 }}>
+              <label style={{ fontSize: 12 }}>Z: <input type="number" value={offset[2]} onChange={e => setOffset([offset[0], offset[1], Number(e.target.value)])} style={{ width: 50, marginLeft: 4, fontSize: 12 }}/></label>
             </div>
           </>
         ) : (
           <>
-            <div style={{ marginBottom: 8 }}>
-              <label>X: <input type="number" value={absolute[0]} onChange={e => setAbsolute([Number(e.target.value), absolute[1], absolute[2]])} style={{ width: 60, marginLeft: 4 }}/></label>
+            <div style={{ marginBottom: 2 }}>
+              <label style={{ fontSize: 12 }}>X: <input type="number" value={absolute[0]} onChange={e => setAbsolute([Number(e.target.value), absolute[1], absolute[2]])} style={{ width: 50, marginLeft: 4, fontSize: 12 }}/></label>
             </div>
-            <div style={{ marginBottom: 8 }}>
-              <label>Y: <input type="number" value={absolute[1]} onChange={e => setAbsolute([absolute[0], Number(e.target.value), absolute[2]])} style={{ width: 60, marginLeft: 4 }}/></label>
+            <div style={{ marginBottom: 2 }}>
+              <label style={{ fontSize: 12 }}>Y: <input type="number" value={absolute[1]} onChange={e => setAbsolute([absolute[0], Number(e.target.value), absolute[2]])} style={{ width: 50, marginLeft: 4, fontSize: 12 }}/></label>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label>Z: <input type="number" value={absolute[2]} onChange={e => setAbsolute([absolute[0], absolute[1], Number(e.target.value)])} style={{ width: 60, marginLeft: 4 }}/></label>
+            <div style={{ marginBottom: 6 }}>
+              <label style={{ fontSize: 12 }}>Z: <input type="number" value={absolute[2]} onChange={e => setAbsolute([absolute[0], absolute[1], Number(e.target.value)])} style={{ width: 50, marginLeft: 4, fontSize: 12 }}/></label>
             </div>
           </>
         )}
-        <Button variant="outline" style={{ marginRight: 8 }} onClick={handleMoveSubmit}>Move</Button>
-        <Button variant="ghost" onClick={onClose}>Cancel</Button>
-      </Card>
+        <Button size="sm" variant="outline" onClick={handleMoveSubmit} style={{ fontSize: 12, padding: "4px 8px", height: "auto", width: "100%" }}>Move</Button>
+      </div>
     </div>
   );
 };
