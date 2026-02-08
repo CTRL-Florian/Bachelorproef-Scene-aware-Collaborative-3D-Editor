@@ -6,7 +6,11 @@ const SceneAxes: React.FC = () => {
             <axesHelper args={[5]} />
 
             <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
-                <GizmoViewport axisColors={['red', 'green', 'blue']} labelColor="white" />
+                <GizmoViewport 
+                    axisColors={['#ff3050', '#60f740', '#2080ff']} 
+                    labelColor="white" 
+                    hideNegativeAxes
+                />
             </GizmoHelper>
         </>
     );

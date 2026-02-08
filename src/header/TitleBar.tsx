@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/menubar"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Menu from '@/header/menu/Menu';
 
 const TitleBar: React.FC = () => {
     return (
@@ -32,68 +33,11 @@ const TitleBar: React.FC = () => {
 
                 <div className='flex flex-col justify-center'>
                     <h1 className='text-xl font-semibold text-gray-800 leading-tight'>
-                        Scene-aware collaborative 3D editor
+                        Scene-aware Collaborative 3D Editor
                     </h1>
 
                     <nav className='w-fit'>
-                        <Menubar>
-                            <MenubarMenu>
-                                <MenubarTrigger>File</MenubarTrigger>
-                                {/*<MenubarContent>
-                                <MenubarItem>
-                                    New Tab <MenubarShortcut>⌘T</MenubarShortcut>
-                                </MenubarItem>
-                                <MenubarItem>New Window</MenubarItem>
-                                <MenubarSeparator />
-                                <MenubarItem>Share</MenubarItem>
-                                <MenubarSeparator />
-                                <MenubarItem>Print</MenubarItem>
-                                </MenubarContent>*/}
-                            </MenubarMenu>
-
-                            <MenubarMenu>
-                                <MenubarTrigger>Edit</MenubarTrigger>
-                                <MenubarContent>
-                                <MenubarItem>
-                                    Undo <MenubarShortcut>CTRL + Z</MenubarShortcut>
-                                </MenubarItem>
-                                <MenubarItem>
-                                    Redo <MenubarShortcut>CTRL + Y</MenubarShortcut>
-                                </MenubarItem>
-                                </MenubarContent>
-                            </MenubarMenu>
- 
-                            {/*
-                            <MenubarMenu>
-                                <MenubarTrigger>Insert</MenubarTrigger>
-                                <MenubarContent>
-                                <MenubarItem>Cube</MenubarItem>
-                                <MenubarItem>Sphere</MenubarItem>
-                                </MenubarContent>
-                            </MenubarMenu>
-                            */}
-                            <MenubarMenu>
-                                <MenubarTrigger>View</MenubarTrigger>
-                                <MenubarContent>
-                                <MenubarItem>Cube</MenubarItem>
-                                <MenubarItem>Sphere</MenubarItem>
-                                </MenubarContent>
-                            </MenubarMenu>
-
-                            <MenubarMenu>
-                                <MenubarTrigger>Help</MenubarTrigger>
-                                <MenubarContent>
-                                <MenubarItem>Documentation</MenubarItem>
-                                </MenubarContent>
-                            </MenubarMenu>
-
-                            <MenubarMenu>
-                                <MenubarTrigger>Options</MenubarTrigger>
-                                <MenubarContent>
-                                <MenubarItem>Reset position</MenubarItem>
-                                </MenubarContent>
-                            </MenubarMenu>
-                        </Menubar>
+                        <Menu />
                     </nav>
                 </div>
 
@@ -109,7 +53,7 @@ const TitleBar: React.FC = () => {
                         Source
                         <Avatar>
                             <AvatarImage src="https://avatars.githubusercontent.com/u/181760690?v=4&size=64" />
-                            <AvatarFallback>CTRL</AvatarFallback>
+                            <AvatarFallback>S</AvatarFallback>
                         </Avatar>
                     </Button>
                 </div>
