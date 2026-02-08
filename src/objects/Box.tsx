@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useYjsSceneStore } from '@/playground/scene/hooks/useYjsSceneStore'
+import { useContextMenuStore } from '@/popups/hooks/useContextMenuStore'
 
 interface BoxProps {
     id: string;
@@ -10,32 +11,31 @@ interface BoxProps {
     isSelected?: boolean;
 }
 
+
 const Box: React.FC<BoxProps> = ({
     id,
     position,
     rotation = [0, 0, 0],
     scale = [1, 1, 1],
     color = 'orange',
-    isSelected = false,
+    // isSelected = false, // niet gebruikt
 }) => {
     const [clicked, setClicked] = useState(false);
-    const { updateObjectColor } = useYjsSceneStore();
+    const openContextMenu = useContextMenuStore((s) => s.open);
+    const { removeObject, updateObject, addObject, getObject } = useYjsSceneStore();
 
-    const handleClick = (event: any) => {
-        event.stopPropagation();
-        const newClicked = !clicked;
-        setClicked(newClicked);
-        // Update color in Y.js store when selected/deselected
-        updateObjectColor(id, newClicked ? 'royalblue' : color);
-        console.log(`Box ${id} clicked`);
-    };
+    // Acties
+    // Acties worden nu centraal afgehandeld
 
     return (
-        <mesh 
+        <mesh
             onClick={(event) => {
                 event.stopPropagation();
                 setClicked(!clicked);
-                console.log('Box clicked');
+            }}
+            onContextMenu={(event) => {
+                event.stopPropagation();
+                openContextMenu((event as any).clientX ?? 0, (event as any).clientY ?? 0, id);
             }}
             position={position}
             rotation={rotation}
