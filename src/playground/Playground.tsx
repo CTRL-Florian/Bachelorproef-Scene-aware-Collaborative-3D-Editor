@@ -1,4 +1,5 @@
 import ViewPort from '@/playground/ViewPort';
+import SceneGraph from '@/playground/SceneGraph';
 
 const Playground: React.FC = () => {
     return (
@@ -7,7 +8,7 @@ const Playground: React.FC = () => {
                 <div className='flex-grow h-full'>
                     <ViewPort />
                 </div>
-                
+                <SceneGraph />
             </div>
         </>
     );

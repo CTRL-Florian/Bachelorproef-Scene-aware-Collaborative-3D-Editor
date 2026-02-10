@@ -4,15 +4,74 @@ import SceneSettings from '@/playground/scene/SceneSettings';
 import SceneAxes from '@/playground/scene/SceneAxes';
 import SceneCamera from '@/playground/scene/SceneCamera';
 import SceneContent from '@/playground/scene/SceneContent';
+import { useLinkModeStore } from '@/playground/hooks/useLinkModeStore';
 
 const ViewPort: React.FC = () => {
+    const { isLinking, cancelLinking } = useLinkModeStore();
+
     return (
-        <Canvas>
-            <SceneSettings />
-            <SceneCamera />
-            <SceneAxes />
-            <SceneContent />
-        </Canvas>
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <Canvas>
+                <SceneSettings />
+                <SceneCamera />
+                <SceneAxes />
+                <SceneContent />
+            </Canvas>
+
+            {/* Link mode overlay: rode rand en bericht */}
+            {isLinking && (
+                <>
+                    {/* Rode rand overlay */}
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        border: '4px solid #ef4444',
+                        borderRadius: 4,
+                        pointerEvents: 'none',
+                        zIndex: 10,
+                    }} />
+
+                    {/* Bericht boven het canvas */}
+                    <div style={{
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        right: 8,
+                        padding: '10px 16px',
+                        background: 'rgba(239, 68, 68, 0.95)',
+                        color: '#fff',
+                        borderRadius: 6,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        zIndex: 11,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                    }}>
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>
+                            🔗 Link Mode: Click on a box to set it as parent
+                        </span>
+                        <button
+                            onClick={cancelLinking}
+                            style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                border: '1px solid rgba(255,255,255,0.4)',
+                                padding: '4px 12px',
+                                borderRadius: 4,
+                                cursor: 'pointer',
+                                fontWeight: 500,
+                                color: '#fff',
+                                fontSize: 13,
+                            }}
+                        >
+                            Cancel (Esc)
+                        </button>
+                    </div>
+                </>
+            )}
+        </div>
     );
 };
 
