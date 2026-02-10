@@ -7,23 +7,21 @@ import {
 } from "@/components/ui/menubar"
 import { useAddBoxPopupStore } from "@/popups/hooks/useAddBoxPopupStore"
 import { useEffect } from "react"
-import { useKeyboardControls } from "@react-three/drei"
 import { Kbd, KbdGroup } from "@/components/ui/kbd"
 
 const InsertMenu: React.FC = () => {
     const toggle = useAddBoxPopupStore((state) => state.toggle);
-    const [subscribeKeys] = useKeyboardControls();
-
     useEffect(() => {
-        return subscribeKeys(
-            (state) => state,
-            (state) => {
-                if (state.addbox) {
-                    toggle();
-                }
+        const handler = (e: KeyboardEvent) => {
+            // Alleen bij Ctrl + i (of Ctrl + I)
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'i' || e.key === 'I')) {
+                e.preventDefault();
+                toggle();
             }
-        );
-    }, [subscribeKeys, toggle]);
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [toggle]);
 
     return (
         <>

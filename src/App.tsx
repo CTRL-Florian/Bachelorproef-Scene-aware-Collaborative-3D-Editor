@@ -15,7 +15,7 @@ function App() {
         { name: 'zcamera', keys: ['z']},  
         { name: 'toggleaxes', keys: ['b']},
         { name: 'toggleorbit', keys: ['n']},
-        { name: 'addbox', keys: ['Control', 'i']},
+        // { name: 'addbox', keys: ['Control', 'i']}, // Verwijderd, nu handmatig
         { name: 'viewsettings', keys: ['V']},
       ]}>
       <div className='flex flex-col h-screen'>
