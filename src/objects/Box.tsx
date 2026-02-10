@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { useYjsSceneStore } from '@/playground/scene/hooks/useYjsSceneStore'
 import { useContextMenuStore } from '@/popups/hooks/useContextMenuStore'
 
 interface BoxProps {
@@ -9,7 +8,6 @@ interface BoxProps {
     scale?: [number, number, number];
     color?: string;
     isSelected?: boolean;
-    children?: React.ReactNode;
 }
 
 
@@ -19,15 +17,10 @@ const Box: React.FC<BoxProps> = ({
     rotation = [0, 0, 0],
     scale = [1, 1, 1],
     color = 'orange',
-    children,
     // isSelected = false, // niet gebruikt
 }) => {
     const [clicked, setClicked] = useState(false);
     const openContextMenu = useContextMenuStore((s) => s.open);
-    const { removeObject, updateObject, addObject, getObject } = useYjsSceneStore();
-
-    // Acties
-    // Acties worden nu centraal afgehandeld
 
     return (
         <mesh
@@ -45,7 +38,6 @@ const Box: React.FC<BoxProps> = ({
         >
             <boxGeometry args={[3, 3, 3]} />
             <meshStandardMaterial color={clicked ? 'royalblue' : color} />
-            {children}
         </mesh>
     );
 };
