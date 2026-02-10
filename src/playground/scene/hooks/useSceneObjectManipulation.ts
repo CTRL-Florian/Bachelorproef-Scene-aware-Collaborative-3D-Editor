@@ -7,9 +7,13 @@ export function useSceneObjectManipulation() {
   const store = useYjsSceneStore();
 
   return {
-    addBox: (position: [number, number, number] = [0, 0, 0], color: string = 'orange') => {
+    addBox: (
+      position: [number, number, number] = [0, 0, 0],
+      color: string = 'orange',
+      rotation: [number, number, number] = [0, 0, 0]
+    ) => {
       const id = `box-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      store.addObject(id, 'box', position, [0, 0, 0], [1, 1, 1], color);
+      store.addObject(id, 'box', position, rotation, [1, 1, 1], color);
       return id;
     },
 

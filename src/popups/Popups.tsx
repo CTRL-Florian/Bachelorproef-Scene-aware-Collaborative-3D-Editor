@@ -6,17 +6,23 @@ import MoveBoxPopup from "@/popups/MoveBoxPopup";
 import ResizeBoxPopup from "@/popups/ResizeBoxPopup";
 import { useContextMenuStore } from "@/popups/hooks/useContextMenuStore";
 import { useYjsSceneStore } from "@/playground/scene/hooks/useYjsSceneStore";
+import RotateBoxPopup from "@/popups/RotateBoxPopup";
 
 const Popups: React.FC = () => {
     const { isOpen, x, y, boxId, close } = useContextMenuStore();
     const { getObject, updateObject, addObject, removeObject } = useYjsSceneStore();
 
-    // State voor submenu (move of resize)
-    const [activeSubmenu, setActiveSubmenu] = React.useState<null | "move" | "resize">(null);
+    // State voor submenu (move, resize, rotate)
+    const [activeSubmenu, setActiveSubmenu] = React.useState<null | "move" | "resize" | "rotate">(null);
 
     // Handler voor move: open submenu
     const handleMove = () => {
         setActiveSubmenu("move");
+    };
+
+    // Handler voor rotate: open submenu
+    const handleRotate = () => {
+        setActiveSubmenu("rotate");
     };
 
     // Handler voor move-popup: verplaats box
@@ -24,9 +30,36 @@ const Popups: React.FC = () => {
         if (!boxId) return;
         const obj = getObject(boxId);
         if (obj) {
-            updateObject(obj.id, {
-                position: values,
-            });
+            // Offset of absolute?
+            if (Array.isArray(values) && values.length === 3) {
+                // Als offset, tel op bij huidige positie
+                const newPos: [number, number, number] = [
+                    obj.position[0] + values[0],
+                    obj.position[1] + values[1],
+                    obj.position[2] + values[2],
+                ];
+                updateObject(obj.id, { position: newPos });
+            }
+        }
+        setActiveSubmenu(null);
+        close();
+    };
+
+    // Handler voor rotate-popup: roteer box
+    const handleRotateBox = (values: [number, number, number]) => {
+        if (!boxId) return;
+        const obj = getObject(boxId);
+        if (obj) {
+            // Offset of absolute?
+            if (Array.isArray(values) && values.length === 3) {
+                // Als offset, tel op bij huidige rotatie
+                const newRot: [number, number, number] = [
+                    obj.rotation[0] + values[0],
+                    obj.rotation[1] + values[1],
+                    obj.rotation[2] + values[2],
+                ];
+                updateObject(obj.id, { rotation: newRot });
+            }
         }
         setActiveSubmenu(null);
         close();
@@ -86,6 +119,7 @@ const Popups: React.FC = () => {
                     boxId={boxId}
                     onMove={handleMove}
                     onResize={handleResize}
+                    onRotate={handleRotate}
                     onDuplicate={handleDuplicate}
                     onDelete={handleDelete}
                     onClose={() => {
@@ -109,6 +143,15 @@ const Popups: React.FC = () => {
                     y={y}
                     boxId={boxId}
                     onResize={handleResizeBox}
+                    onClose={() => setActiveSubmenu(null)}
+                />
+            )}
+            {activeSubmenu === "rotate" && boxId && isOpen && (
+                <RotateBoxPopup
+                    x={x + 200}
+                    y={y}
+                    boxId={boxId}
+                    onRotate={handleRotateBox}
                     onClose={() => setActiveSubmenu(null)}
                 />
             )}

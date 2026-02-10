@@ -6,12 +6,13 @@ interface ContextMenuProps {
   boxId: string;
   onMove: () => void;
   onResize: () => void;
+  onRotate: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
   onClose: () => void;
 }
 
-const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, boxId, onMove, onResize, onDuplicate, onDelete, onClose }) => {
+const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, boxId, onMove, onResize, onRotate, onDuplicate, onDelete, onClose }) => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,6 +55,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, boxId, onMove, onResize
       <div style={{ fontWeight: "bold", marginBottom: 4, fontSize: 13 }}>Box ID: {boxId}</div>
       <button style={btnStyle} onClick={onMove}>Move</button>
       <button style={btnStyle} onClick={onResize}>Resize</button>
+      <button style={btnStyle} onClick={onRotate}>Rotate</button>
       <button style={btnStyle} onClick={onDuplicate}>Duplicate</button>
       <button style={{ ...btnStyle, color: '#d32f2f' }} onClick={onDelete}>Delete</button>
     </div>
