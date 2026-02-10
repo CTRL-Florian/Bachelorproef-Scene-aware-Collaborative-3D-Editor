@@ -5,7 +5,7 @@ interface RotateBoxPopupProps {
   x: number;
   y: number;
   boxId: string;
-  onRotate: (values: [number, number, number]) => void;
+  onRotate: (values: [number, number, number], mode: "offset" | "absolute") => void;
   onClose: () => void;
 }
 
@@ -24,13 +24,13 @@ const RotateBoxPopup: React.FC<RotateBoxPopupProps> = ({ x, y, boxId, onRotate, 
         degToRad(absolute[0]),
         degToRad(absolute[1]),
         degToRad(absolute[2])
-      ]);
+      ], "absolute");
     } else {
       onRotate([
         degToRad(offset[0]),
         degToRad(offset[1]),
         degToRad(offset[2])
-      ]);
+      ], "offset");
     }
     onClose();
   };

@@ -62,19 +62,21 @@ const Popups: React.FC = () => {
     };
 
     // Handler voor rotate-popup: roteer box
-    const handleRotateBox = (values: [number, number, number]) => {
+    const handleRotateBox = (values: [number, number, number], mode: "offset" | "absolute") => {
         if (!boxId) return;
         const obj = getObject(boxId);
         if (obj) {
-            // Offset of absolute?
             if (Array.isArray(values) && values.length === 3) {
-                // Als offset, tel op bij huidige rotatie
-                const newRot: [number, number, number] = [
-                    obj.rotation[0] + values[0],
-                    obj.rotation[1] + values[1],
-                    obj.rotation[2] + values[2],
-                ];
-                updateObject(obj.id, { rotation: newRot });
+                if (mode === "absolute") {
+                    updateObject(obj.id, { rotation: values });
+                } else {
+                    const newRot: [number, number, number] = [
+                        obj.rotation[0] + values[0],
+                        obj.rotation[1] + values[1],
+                        obj.rotation[2] + values[2],
+                    ];
+                    updateObject(obj.id, { rotation: newRot });
+                }
             }
         }
         setActiveSubmenu(null);
