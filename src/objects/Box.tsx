@@ -9,6 +9,7 @@ interface BoxProps {
     scale?: [number, number, number];
     color?: string;
     isSelected?: boolean;
+    children?: React.ReactNode;
 }
 
 
@@ -18,6 +19,7 @@ const Box: React.FC<BoxProps> = ({
     rotation = [0, 0, 0],
     scale = [1, 1, 1],
     color = 'orange',
+    children,
     // isSelected = false, // niet gebruikt
 }) => {
     const [clicked, setClicked] = useState(false);
@@ -43,6 +45,7 @@ const Box: React.FC<BoxProps> = ({
         >
             <boxGeometry args={[3, 3, 3]} />
             <meshStandardMaterial color={clicked ? 'royalblue' : color} />
+            {children}
         </mesh>
     );
 };

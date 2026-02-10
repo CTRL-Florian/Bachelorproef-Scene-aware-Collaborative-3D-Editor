@@ -9,10 +9,11 @@ interface ContextMenuProps {
   onRotate: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onLink: () => void;
   onClose: () => void;
 }
 
-const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, boxId, onMove, onResize, onRotate, onDuplicate, onDelete, onClose }) => {
+const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, boxId, onMove, onResize, onRotate, onDuplicate, onDelete, onLink, onClose }) => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,6 +58,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, boxId, onMove, onResize
       <button style={btnStyle} onClick={onResize}>Resize</button>
       <button style={btnStyle} onClick={onRotate}>Rotate</button>
       <button style={btnStyle} onClick={onDuplicate}>Duplicate</button>
+      <button style={btnStyle} onClick={onLink}>Link (as child)</button>
       <button style={{ ...btnStyle, color: '#d32f2f' }} onClick={onDelete}>Delete</button>
     </div>
   );

@@ -10,10 +10,26 @@ import RotateBoxPopup from "@/popups/RotateBoxPopup";
 
 const Popups: React.FC = () => {
     const { isOpen, x, y, boxId, close } = useContextMenuStore();
-    const { getObject, updateObject, addObject, removeObject } = useYjsSceneStore();
+    const { state, getObject, updateObject, addObject, removeObject, linkObject } = useYjsSceneStore();
 
     // State voor submenu (move, resize, rotate)
-    const [activeSubmenu, setActiveSubmenu] = React.useState<null | "move" | "resize" | "rotate">(null);
+    const [activeSubmenu, setActiveSubmenu] = React.useState<null | "move" | "resize" | "rotate" | "link">(null);
+    const [linkSourceId, setLinkSourceId] = React.useState<string | null>(null);
+    // Handler voor Link: start linking mode
+    const handleLink = () => {
+        setLinkSourceId(boxId);
+        setActiveSubmenu("link");
+    };
+
+    // Handler voor het selecteren van een parent box om te linken
+    const handleSelectParent = (parentId: string) => {
+        if (linkSourceId && parentId && linkSourceId !== parentId) {
+            linkObject(linkSourceId, parentId);
+        }
+        setLinkSourceId(null);
+        setActiveSubmenu(null);
+        close();
+    };
 
     // Handler voor move: open submenu
     const handleMove = () => {
@@ -112,7 +128,7 @@ const Popups: React.FC = () => {
         <>
             <ViewSettingPopup />
             <AddBoxPopup />
-            {isOpen && boxId && (
+            {isOpen && boxId && !linkSourceId && (
                 <ContextMenu
                     x={x}
                     y={y}
@@ -122,11 +138,25 @@ const Popups: React.FC = () => {
                     onRotate={handleRotate}
                     onDuplicate={handleDuplicate}
                     onDelete={handleDelete}
+                    onLink={handleLink}
                     onClose={() => {
                         close();
                         setActiveSubmenu(null);
                     }}
                 />
+            )}
+            {/* Link mode: klik op een andere box om te linken */}
+            {activeSubmenu === "link" && linkSourceId && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 2000, background: 'rgba(0,0,0,0.05)' }}
+                    onClick={() => { setLinkSourceId(null); setActiveSubmenu(null); }}>
+                    <div style={{ position: 'absolute', top: y, left: x + 200, background: '#fff', padding: 16, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                        <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Select parent box</div>
+                        {state.objects.filter(obj => obj.id !== linkSourceId).map(obj => (
+                            <button key={obj.id} style={{ display: 'block', marginBottom: 4, width: '100%' }} onClick={e => { e.stopPropagation(); handleSelectParent(obj.id); }}>{obj.id}</button>
+                        ))}
+                        <button style={{ marginTop: 8, color: '#888' }} onClick={e => { e.stopPropagation(); setLinkSourceId(null); setActiveSubmenu(null); }}>Cancel</button>
+                    </div>
+                </div>
             )}
             {activeSubmenu === "move" && boxId && isOpen && (
                 <MoveBoxPopup
