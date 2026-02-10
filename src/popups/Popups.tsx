@@ -47,21 +47,68 @@ const Popups: React.FC = () => {
     };
 
     // Handler voor move-popup: verplaats box
-    const handleMoveBox = (values: [number, number, number]) => {
+    const handleMoveBox = (values: [number, number, number], mode: "offset" | "absolute" | "relative") => {
         if (!boxId) return;
         const obj = getObject(boxId);
-        if (obj) {
-            // Offset of absolute?
-            if (Array.isArray(values) && values.length === 3) {
-                // Als offset, tel op bij huidige positie
-                const newPos: [number, number, number] = [
+        if (!obj) return;
+
+        let newPos: [number, number, number];
+
+        switch (mode) {
+            case "offset":
+                // Offset: voeg toe aan huidige lokale positie
+                newPos = [
                     obj.position[0] + values[0],
                     obj.position[1] + values[1],
                     obj.position[2] + values[2],
                 ];
-                updateObject(obj.id, { position: newPos });
-            }
+                break;
+            case "relative":
+                // Relative: stel lokale positie in (t.o.v. parent)
+                // Dit is gewoon de directe waarde want position is al lokaal
+                newPos = values;
+                break;
+            case "absolute":
+                // Absolute: wereldcoördinaten -> moeten omgezet worden naar lokaal
+                if (obj.parentId) {
+                    // Object heeft een parent, we moeten de wereldpositie omzetten naar lokaal
+                    // Haal de parent's wereldpositie op en bereken het verschil
+                    // Voor nu: we slaan de waarden direct op als lokale positie
+                    // Dit vereist dat we de inverse parent transformatie toepassen
+                    // Vereenvoudigde versie: we trekken de parent's wereldpositie af
+                    const parent = getObject(obj.parentId);
+                    if (parent) {
+                        // Recursief de wereldpositie van de parent berekenen
+                        const getWorldPos = (id: string): [number, number, number] => {
+                            const o = getObject(id);
+                            if (!o) return [0, 0, 0];
+                            if (o.parentId) {
+                                const parentWorldPos = getWorldPos(o.parentId);
+                                return [
+                                    parentWorldPos[0] + o.position[0],
+                                    parentWorldPos[1] + o.position[1],
+                                    parentWorldPos[2] + o.position[2],
+                                ];
+                            }
+                            return [...o.position] as [number, number, number];
+                        };
+                        const parentWorldPos = getWorldPos(obj.parentId);
+                        newPos = [
+                            values[0] - parentWorldPos[0],
+                            values[1] - parentWorldPos[1],
+                            values[2] - parentWorldPos[2],
+                        ];
+                    } else {
+                        newPos = values;
+                    }
+                } else {
+                    // Geen parent: absolute = lokale positie
+                    newPos = values;
+                }
+                break;
         }
+
+        updateObject(obj.id, { position: newPos });
         setActiveSubmenu(null);
         close();
     };
