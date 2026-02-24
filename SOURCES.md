@@ -9,3 +9,6 @@ Documentation:
         - https://ui.shadcn.com/docs/components
     4) tailwind css
         - https://tailwindcss.com/docs/installation/using-vite
+
+npm run server
+npm run dev

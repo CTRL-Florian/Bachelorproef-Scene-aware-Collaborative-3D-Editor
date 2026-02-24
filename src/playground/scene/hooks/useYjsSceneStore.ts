@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
 import { mat4, vec3 } from 'gl-matrix';
 
 export interface SceneObject {
@@ -18,19 +19,31 @@ interface SceneState {
   selectedObjectId: string | null;
 }
 
+// WebSocket server URL - change this to your server address
+const WEBSOCKET_URL = 'ws://localhost:1234';
+// Room name - all clients with the same room name will sync
+const ROOM_NAME = 'scene-room';
+
 class YjsSceneStore {
   private ydoc: Y.Doc;
   private yobjects: Y.Map<any>;
   private listeners: Set<() => void> = new Set();
+  private wsProvider: WebsocketProvider;
 
   constructor() {
     this.ydoc = new Y.Doc();
+    
+    // Connect to WebSocket server for real-time collaboration
+    this.wsProvider = new WebsocketProvider(WEBSOCKET_URL, ROOM_NAME, this.ydoc);
+    
     this.yobjects = this.ydoc.getMap('objects');
 
-    // Initialize with a default box if empty
-    if (this.yobjects.size === 0) {
-      this.addObject('box-default', 'box', [0, 0, 0], [0, 0, 0], [1, 1, 1], 'orange');
-    }
+    // Wait for sync before initializing default object
+    this.wsProvider.on('sync', (isSynced: boolean) => {
+      if (isSynced && this.yobjects.size === 0) {
+        this.addObject('box-default', 'box', [0, 0, 0], [0, 0, 0], [1, 1, 1], 'orange');
+      }
+    });
 
     // Subscribe to changes
     this.yobjects.observe(() => {
