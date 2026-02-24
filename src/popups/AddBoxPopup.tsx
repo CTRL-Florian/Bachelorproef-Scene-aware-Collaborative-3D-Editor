@@ -25,24 +25,15 @@ const AddBoxPopup: React.FC = () => {
     const [height, setHeight] = useState('3');
     const [length, setLength] = useState('3');
     const [color, setColor] = useState('#FFA500'); // orange
-    const [rotX, setRotX] = useState('0');
-    const [rotY, setRotY] = useState('0');
-    const [rotZ, setRotZ] = useState('0');
 
-    // Helper: graden naar radialen
-    const degToRad = (deg: number) => deg * Math.PI / 180;
     const handleAddBox = () => {
         const position: [number, number, number] = [
             parseFloat(x) || 0,
             parseFloat(y) || 0,
             parseFloat(z) || 0,
         ];
-        const rotation: [number, number, number] = [
-            degToRad(parseFloat(rotX) || 0),
-            degToRad(parseFloat(rotY) || 0),
-            degToRad(parseFloat(rotZ) || 0),
-        ];
-        addBox(position, color, rotation);
+        addBox(position, color);
+        
         // Reset form
         setX('0');
         setY('0');
@@ -51,9 +42,7 @@ const AddBoxPopup: React.FC = () => {
         setHeight('3');
         setLength('3');
         setColor('#FFA500');
-        setRotX('0');
-        setRotY('0');
-        setRotZ('0');
+        
         // Close dialog
         close();
     };
@@ -141,35 +130,6 @@ const AddBoxPopup: React.FC = () => {
                                                 min="0.1"
                                             />
                                         </div>
-                                    </div>
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label>Rotation (°) X Y Z</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            id="rotX"
-                                            type="number"
-                                            placeholder="X"
-                                            value={rotX}
-                                            onChange={(e) => setRotX(e.target.value)}
-                                            step="1"
-                                        />
-                                        <Input
-                                            id="rotY"
-                                            type="number"
-                                            placeholder="Y"
-                                            value={rotY}
-                                            onChange={(e) => setRotY(e.target.value)}
-                                            step="1"
-                                        />
-                                        <Input
-                                            id="rotZ"
-                                            type="number"
-                                            placeholder="Z"
-                                            value={rotZ}
-                                            onChange={(e) => setRotZ(e.target.value)}
-                                            step="1"
-                                        />
                                     </div>
                                 </div>
                                 <div className="grid gap-2">
