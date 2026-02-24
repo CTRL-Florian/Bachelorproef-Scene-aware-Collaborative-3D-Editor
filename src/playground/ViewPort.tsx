@@ -4,6 +4,7 @@ import SceneSettings from '@/playground/scene/SceneSettings';
 import SceneAxes from '@/playground/scene/SceneAxes';
 import SceneCamera from '@/playground/scene/SceneCamera';
 import SceneContent from '@/playground/scene/SceneContent';
+import SceneGrid from '@/playground/scene/SceneGrid';
 import { useLinkModeStore } from '@/playground/hooks/useLinkModeStore';
 
 const ViewPort: React.FC = () => {
@@ -14,6 +15,7 @@ const ViewPort: React.FC = () => {
             <Canvas>
                 <SceneSettings />
                 <SceneCamera />
+                <SceneGrid />
                 <SceneAxes />
                 <SceneContent />
             </Canvas>
