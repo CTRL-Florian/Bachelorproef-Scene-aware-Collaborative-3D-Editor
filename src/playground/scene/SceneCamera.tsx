@@ -1,9 +1,8 @@
-import { useKeyboardControls, OrbitControls } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import { useRef, useEffect } from 'react'
 
 const SceneCamera: React.FC = () => {
     const controlsRef = useRef<any>(null);
-    const [subscribeKeys] = useKeyboardControls();
 
     const xCamera = () => {
         if (controlsRef.current) {
@@ -54,24 +53,38 @@ const SceneCamera: React.FC = () => {
     };
 
     useEffect(() => {
-        return subscribeKeys(
-            (state) => state,
-            (state) => {
-                if (state.reset) {
-                    resetCamera();
-                }
-                if (state.xcamera) {
-                    xCamera();
-                }
-                if (state.ycamera) {
-                    yCamera();
-                }
-                if (state.zcamera) {
-                    zCamera();
-                }
+        // Handle keyboard shortcuts for camera - skip if Ctrl/Meta is pressed
+        const handleKeyDown = (event: KeyboardEvent) => {
+            // Skip if modifier keys are pressed (for undo/redo etc)
+            if (event.ctrlKey || event.metaKey || event.altKey) {
+                return;
             }
-        );
-    }, [subscribeKeys]);
+            
+            // Skip if in input field
+            const target = event.target as HTMLElement;
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+                return;
+            }
+
+            switch (event.key.toLowerCase()) {
+                case 'r':
+                    resetCamera();
+                    break;
+                case 'x':
+                    xCamera();
+                    break;
+                case 'y':
+                    yCamera();
+                    break;
+                case 'z':
+                    zCamera();
+                    break;
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     return (
         <OrbitControls ref={controlsRef}

@@ -9,6 +9,13 @@ import Popups from '@/popups/Popups'
 import UserNameDialog from '@/components/UserNameDialog'
 import { awarenessStore } from '@/stores/useAwarenessStore'
 import { sceneStore } from '@/playground/scene/hooks/useYjsSceneStore'
+import { useUndoRedoKeyboard } from '@/commands/useUndoRedoKeyboard'
+
+// Component dat de keyboard shortcuts registreert
+function UndoRedoHandler() {
+  useUndoRedoKeyboard();
+  return null;
+}
 
 function App() {
   // Always show name dialog on load - each tab/session is a new user
@@ -28,15 +35,13 @@ function App() {
 
   return (
     <KeyboardControls map={[
-        { name: 'reset', keys: ['r', 'R']},
-        { name: 'xcamera', keys: ['x']},
-        { name: 'ycamera', keys: ['y']},
-        { name: 'zcamera', keys: ['z']},  
         { name: 'toggleaxes', keys: ['b']},
         { name: 'toggleorbit', keys: ['n']},
-        // { name: 'addbox', keys: ['Control', 'i']}, // Verwijderd, nu handmatig
         { name: 'viewsettings', keys: ['V']},
       ]}>
+      {/* Undo/Redo keyboard handler */}
+      <UndoRedoHandler />
+      
       <div className='flex flex-col h-screen'>
         <Header />
 

@@ -8,11 +8,13 @@ import { useContextMenuStore } from "@/popups/hooks/useContextMenuStore";
 import { useYjsSceneStore } from "@/playground/scene/hooks/useYjsSceneStore";
 import { useLinkModeStore } from "@/playground/hooks/useLinkModeStore";
 import RotateBoxPopup from "@/popups/RotateBoxPopup";
+import { getCommandManager, MoveObjectCommand, RotateObjectCommand, ScaleObjectCommand, DuplicateObjectCommand, RemoveObjectCommand } from "@/commands";
 
 const Popups: React.FC = () => {
     const { isOpen, x, y, boxId, close } = useContextMenuStore();
-    const { getObject, updateObject, addObject, removeObject } = useYjsSceneStore();
+    const { getObject } = useYjsSceneStore();
     const { isLinking, startLinking, cancelLinking } = useLinkModeStore();
+    const commandManager = getCommandManager();
 
     // State voor submenu (move, resize, rotate)
     const [activeSubmenu, setActiveSubmenu] = React.useState<null | "move" | "resize" | "rotate">(null);
@@ -108,7 +110,15 @@ const Popups: React.FC = () => {
                 break;
         }
 
-        updateObject(obj.id, { position: newPos });
+        // Gebruik command voor undo/redo support
+        const command = new MoveObjectCommand(
+            obj.id,
+            obj.position,
+            newPos,
+            mode
+        );
+        commandManager.execute(command);
+        
         setActiveSubmenu(null);
         close();
     };
@@ -119,16 +129,18 @@ const Popups: React.FC = () => {
         const obj = getObject(boxId);
         if (obj) {
             if (Array.isArray(values) && values.length === 3) {
+                let newRot: [number, number, number];
                 if (mode === "absolute") {
-                    updateObject(obj.id, { rotation: values });
+                    newRot = values;
                 } else {
-                    const newRot: [number, number, number] = [
+                    newRot = [
                         obj.rotation[0] + values[0],
                         obj.rotation[1] + values[1],
                         obj.rotation[2] + values[2],
                     ];
-                    updateObject(obj.id, { rotation: newRot });
                 }
+                const command = new RotateObjectCommand(obj.id, obj.rotation, newRot);
+                commandManager.execute(command);
             }
         }
         setActiveSubmenu(null);
@@ -150,7 +162,8 @@ const Popups: React.FC = () => {
                 absolute[1] !== 0 ? Math.max(0.1, absolute[1]) : obj.scale[1] + offset[1],
                 absolute[2] !== 0 ? Math.max(0.1, absolute[2]) : obj.scale[2] + offset[2],
             ];
-            updateObject(obj.id, { scale: newScale });
+            const command = new ScaleObjectCommand(obj.id, obj.scale, newScale);
+            commandManager.execute(command);
         }
         setActiveSubmenu(null);
         close();
@@ -160,21 +173,16 @@ const Popups: React.FC = () => {
         const obj = getObject(boxId);
         if (obj) {
             const newId = boxId + '-copy-' + Math.floor(Math.random()*10000);
-            // Offset in x en y
-            addObject(
-                newId,
-                'box',
-                [obj.position[0]+2, obj.position[1]+1.5, obj.position[2]],
-                obj.rotation,
-                obj.scale,
-                obj.color
-            );
+            const newPosition: [number, number, number] = [obj.position[0]+2, obj.position[1]+1.5, obj.position[2]];
+            const command = new DuplicateObjectCommand(boxId, newId, newPosition);
+            commandManager.execute(command);
         }
         close();
     };
     const handleDelete = () => {
         if (!boxId) return;
-        removeObject(boxId);
+        const command = new RemoveObjectCommand(boxId);
+        commandManager.execute(command);
         close();
     };
 
