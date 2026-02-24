@@ -51,6 +51,11 @@ class YjsSceneStore {
     });
   }
 
+  // Get the WebSocket provider for awareness
+  getProvider(): WebsocketProvider {
+    return this.wsProvider;
+  }
+
   // Helper: bouw een map van alle objecten
   private getObjectMap(): Record<string, SceneObject> {
     const map: Record<string, SceneObject> = {};
@@ -268,6 +273,9 @@ function getYjsSceneStore(): YjsSceneStore {
   }
   return storeInstance;
 }
+
+// Export the singleton instance for direct access (e.g., for awareness)
+export const sceneStore = getYjsSceneStore();
 
 // React hook for using the store
 export function useYjsSceneStore() {

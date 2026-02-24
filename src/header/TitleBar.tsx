@@ -1,16 +1,8 @@
 import React from 'react';
-import {
-  Menubar,
-  MenubarContent,
-  MenubarItem,
-  MenubarMenu,
-  MenubarSeparator,
-  MenubarShortcut,
-  MenubarTrigger,
-} from "@/components/ui/menubar"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Menu from '@/header/menu/Menu';
+import UserAvatars from '@/components/UserAvatars';
 
 const TitleBar: React.FC = () => {
     return (
@@ -41,7 +33,8 @@ const TitleBar: React.FC = () => {
                     </nav>
                 </div>
 
-                <div className='ml-auto'>
+                <div className='ml-auto flex items-center gap-4'>
+                    <UserAvatars />
                     <Button 
                         variant="secondary" 
                         size="lg" 
