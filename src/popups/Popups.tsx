@@ -1,7 +1,7 @@
 import React from "react";
 import ViewSettingPopup from "@/popups/ViewSettingPopup";
 import AddBoxPopup from "@/popups/AddBoxPopup";
-import ContextMenu from "@/popups/ContextMenu";
+import ActionWheel from "@/popups/ActionWheel";
 import MoveBoxPopup from "@/popups/MoveBoxPopup";
 import ResizeBoxPopup from "@/popups/ResizeBoxPopup";
 import { useContextMenuStore } from "@/popups/hooks/useContextMenuStore";
@@ -184,7 +184,7 @@ const Popups: React.FC = () => {
             <AddBoxPopup />
 
             {isOpen && boxId && !isLinking && (
-                <ContextMenu
+                <ActionWheel
                     x={x}
                     y={y}
                     boxId={boxId}
