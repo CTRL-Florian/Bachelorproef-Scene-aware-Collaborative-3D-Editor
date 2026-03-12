@@ -8,14 +8,14 @@
 import { test, expect, navigateAllUsers, setUserName, waitForSceneReady } from '../fixtures/collaboration-fixtures';
 
 test.describe('Multi-User Collaboration', () => {
-  test('two users should see the same scene', async ({ createUsers, page }) => {
+  test('two users should see the same scene', async ({ createUsers }) => {
     // Maak 2 gebruikers aan
     const users = await createUsers(2);
     
     // Navigeer beide naar de app
     await navigateAllUsers(users);
     
-    // Set usernames
+    // Set usernames (vult de verplichte dialog in)
     await setUserName(users[0], 'Alice');
     await setUserName(users[1], 'Bob');
     
@@ -41,13 +41,12 @@ test.describe('Multi-User Collaboration', () => {
     // Wacht even voor presence sync
     await users[0].page.waitForTimeout(1000);
     
-    // Check of beide users elkaars avatars zien
-    // Dit hangt af van hoe de UI geïmplementeerd is
-    const avatarsUser1 = users[0].page.locator('[data-testid="user-avatar"], .user-avatar');
-    const avatarsUser2 = users[1].page.locator('[data-testid="user-avatar"], .user-avatar');
+    // Check of de user avatars component zichtbaar is
+    // Dit hangt af van hoe UserAvatars geïmplementeerd is
+    const avatarsContainer = users[0].page.locator('[class*="avatar"], [data-testid="user-avatars"]');
     
-    // Er zouden minimaal 2 avatars moeten zijn (inclusief eigen avatar)
-    // Dit kan falen als de app geen avatars toont - pas aan naar jouw UI
+    // Er zou minstens iets met avatars moeten zijn
+    // Als dit faalt, kan de selector aangepast worden
   });
 
   test('adding an object should sync to other user', async ({ createUsers }) => {
@@ -60,35 +59,29 @@ test.describe('Multi-User Collaboration', () => {
     await waitForSceneReady(users[0]);
     await waitForSceneReady(users[1]);
     
-    // User1 opent het Insert menu en voegt een box toe
-    // Let op: pas deze selectors aan naar jouw UI
-    const insertMenu = users[0].page.getByRole('menubar').getByText(/insert/i);
+    // Gebruik de test hooks om een object toe te voegen via User1
+    const boxId = await users[0].page.evaluate(() => {
+      // @ts-ignore - test hook
+      return window.addTestBox?.([5, 0, 0]) ?? null;
+    });
     
-    if (await insertMenu.isVisible()) {
-      await insertMenu.click();
+    if (boxId) {
+      // Wacht op sync
+      await users[0].page.waitForTimeout(500);
       
-      // Zoek de "Add Box" optie
-      const addBoxOption = users[0].page.getByRole('menuitem', { name: /box|kubus/i });
-      if (await addBoxOption.isVisible()) {
-        await addBoxOption.click();
-        
-        // Als er een dialog is, vul de waarden in en submit
-        const dialog = users[0].page.getByRole('dialog');
-        if (await dialog.isVisible()) {
-          // Klik op de submit button
-          const submitButton = dialog.getByRole('button', { name: /add|create|toevoegen/i });
-          if (await submitButton.isVisible()) {
-            await submitButton.click();
-          }
-        }
-        
-        // Wacht op sync
-        await users[0].page.waitForTimeout(500);
-        
-        // Verify dat beide users hetzelfde aantal objecten zien
-        // Dit vereist dat de app een manier heeft om het aantal objecten te checken
-        // Je kunt dit doen via de scene graph UI of via window functies
-      }
+      // Check dat User2 het object ook ziet
+      const user2ObjectCount = await users[1].page.evaluate(() => {
+        // @ts-ignore - test hook
+        return window.getSceneObjectCount?.() ?? 0;
+      });
+      
+      const user1ObjectCount = await users[0].page.evaluate(() => {
+        // @ts-ignore - test hook
+        return window.getSceneObjectCount?.() ?? 0;
+      });
+      
+      // Beide moeten hetzelfde aantal objecten zien
+      expect(user1ObjectCount).toBe(user2ObjectCount);
     }
   });
 });

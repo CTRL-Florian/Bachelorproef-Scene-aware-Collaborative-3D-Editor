@@ -187,6 +187,9 @@ export async function navigateAllUsers(
 
 /**
  * Helper: Set username voor een user in de app
+ * 
+ * De app toont een UserNameDialog bij het opstarten die ingevuld moet worden
+ * voordat de gebruiker de editor kan gebruiken.
  */
 export async function setUserName(
   user: CollaborationUser,
@@ -195,12 +198,25 @@ export async function setUserName(
   // Wacht op de username dialog
   const dialog = user.page.getByRole('dialog');
   
+  // Wacht tot de dialog zichtbaar is (max 5 seconden)
+  try {
+    await dialog.waitFor({ state: 'visible', timeout: 5000 });
+  } catch {
+    // Dialog is misschien al ingevuld of niet aanwezig
+    console.log(`Username dialog not visible for ${name}, skipping...`);
+    return;
+  }
+  
   if (await dialog.isVisible()) {
-    await user.page.getByPlaceholder(/name|naam/i).fill(name);
-    await user.page.getByRole('button', { name: /continue|doorgaan|ok/i }).click();
+    // Vul de naam in via het input veld met id="name"
+    const nameInput = user.page.locator('#name');
+    await nameInput.fill(name);
+    
+    // Klik op de Start button
+    await user.page.getByRole('button', { name: 'Start' }).click();
     
     // Wacht tot dialog verdwijnt
-    await dialog.waitFor({ state: 'hidden' });
+    await dialog.waitFor({ state: 'hidden', timeout: 5000 });
   }
 }
 
