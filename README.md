@@ -1,3 +1,6 @@
+npm install
+npx playwright install
+
 npm run server
 npm run dev
 
