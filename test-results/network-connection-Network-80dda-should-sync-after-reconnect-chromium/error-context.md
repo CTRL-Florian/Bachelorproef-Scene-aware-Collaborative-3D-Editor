@@ -1,0 +1,50 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - img
+          - generic:
+            - img
+          - generic:
+            - heading [level=1]: Scene-aware Collaborative 3D Editor
+            - navigation:
+              - menubar:
+                - menuitem: File
+                - menuitem: Edit
+                - menuitem: View
+                - menuitem: Insert
+                - menuitem: Options
+                - menuitem: Help
+          - generic:
+            - button:
+              - text: Source
+              - generic:
+                - img
+      - generic:
+        - generic:
+          - generic:
+            - generic: Scene Graph
+            - generic:
+              - generic:
+                - generic:
+                  - generic: box-default
+  - dialog "Welkom bij de Collaborative 3D Editor" [active] [ref=e5]:
+    - generic [ref=e6]:
+      - heading "Welkom bij de Collaborative 3D Editor" [level=2] [ref=e7]
+      - paragraph [ref=e8]: Voer je naam of initialen in om te beginnen. Andere gebruikers zullen dit zien.
+    - generic [ref=e9]:
+      - generic [ref=e11]:
+        - generic [ref=e12]: Naam
+        - textbox "Naam" [ref=e13]:
+          - /placeholder: bijv. Jan of JD
+      - generic [ref=e14]:
+        - button "Start" [disabled]
+    - button "Close" [ref=e15]:
+      - img
+      - generic [ref=e16]: Close
+```

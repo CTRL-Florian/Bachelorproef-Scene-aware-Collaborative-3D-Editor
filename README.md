@@ -1,3 +1,27 @@
+npm run server
+npm run dev
+
+npm run test          # Run tests in watch mode
+npm run test:run      # Run tests eenmalig
+npm run test:coverage # Coverage rapport
+npm run test:e2e      # E2E tests met Playwright
+npm run test:collab   # Alleen collaboration E2E tests
+npm run test:network  # Alleen network E2E tests
+
+- Y.Map.set() vervangt het HELE object - Wanneer twee users verschillende properties updaten, gaat één update verloren omdat de huidige implementatie hele objecten vervangt. Dit is een onderzoekspunt voor scene-aware conflict resolution.
+
+- Belangrijke bevindingen voor je onderzoek
+Last-Write-Wins: Bij Y.Map wint altijd de laatste schrijver (gebaseerd op client ID ordering)
+Hele object vervanging: yobjects.set(id, {...}) vervangt het hele object, waardoor parallelle property-edits verloren gaan
+Delete vs Update: Als user A verwijdert en user B updatet, wordt de update soms toch toegepast (object blijft bestaan)
+
+- Mogelijke oplossingsrichtingen om te onderzoeken
+Nested Y.Map per property - Elke property apart syncen
+Operational Transformation - Transformeer conflicterende operaties
+Scene-aware merging - Domein-specifieke merge logica (bijv. positie interpoleren)
+Locking/reservations - Object claimen tijdens bewerking
+3-way merge - Vergelijk met gemeenschappelijke ancesto
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
