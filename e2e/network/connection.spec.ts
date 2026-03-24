@@ -5,7 +5,7 @@
  * dat de applicatie correct herstelt.
  */
 
-import { test, expect, navigateAllUsers, setUserName, waitForSceneReady } from '../fixtures/collaboration-fixtures';
+import { test, expect, navigateAllUsers, setUserName, waitForSceneReady, resetCameraForAllUsers } from '../fixtures/collaboration-fixtures';
 
 test.describe('Network Disconnection', () => {
   test('user should see reconnection after brief disconnect', async ({ 
@@ -21,6 +21,7 @@ test.describe('Network Disconnection', () => {
     
     await waitForSceneReady(users[0]);
     await waitForSceneReady(users[1]);
+    await resetCameraForAllUsers(users);
     
     // Disconnect User2
     await disconnectUser(users[1]);
@@ -48,6 +49,7 @@ test.describe('Network Disconnection', () => {
     
     await waitForSceneReady(users[0]);
     await waitForSceneReady(users[1]);
+    await resetCameraForAllUsers(users);
     
     // Disconnect User2
     await disconnectUser(users[1]);
@@ -81,6 +83,7 @@ test.describe('Network Disconnection', () => {
     
     await waitForSceneReady(users[0]);
     await waitForSceneReady(users[1]);
+    await resetCameraForAllUsers(users);
     
     // Beide users gaan offline
     await disconnectUser(users[0]);
@@ -144,6 +147,7 @@ test.describe('Connection Quality', () => {
     
     await waitForSceneReady(users[0]);
     await waitForSceneReady(users[1]);
+    await resetCameraForAllUsers(users);
     
     // Simuleer packet loss door requests te intercepten
     let dropCount = 0;

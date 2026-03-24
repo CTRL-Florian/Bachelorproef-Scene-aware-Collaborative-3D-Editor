@@ -14,17 +14,14 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import * as Y from 'yjs';
 import {
   TestCollaborationEnvironment,
   addSceneObject,
   updateSceneObject,
   removeSceneObject,
-  getSceneObjects,
   getSceneObject,
   createTestBox,
   type TestUser,
-  type TestSceneObject,
 } from './utils/yjs-test-utils';
 
 describe('Conflict Resolution', () => {
@@ -134,6 +131,30 @@ describe('Conflict Resolution', () => {
       
       console.log('Conflict result - rotation:', obj1?.rotation);
     });
+
+    /**
+     * Scenario: Beide gebruikers updaten scale tegelijk
+     */
+    it('should handle concurrent scale updates', () => {
+      addSceneObject(user1.doc, createTestBox({
+        id: 'box-1',
+        scale: [1, 1, 1]
+      }));
+
+      env.disableSync();
+
+      updateSceneObject(user1.doc, 'box-1', { scale: [2, 1, 1] });
+      updateSceneObject(user2.doc, 'box-1', { scale: [1, 2, 1] });
+
+      env.enableSync();
+
+      const obj1 = getSceneObject(user1.doc, 'box-1');
+      const obj2 = getSceneObject(user2.doc, 'box-1');
+
+      expect(obj1?.scale).toEqual(obj2?.scale);
+
+      console.log('Conflict result - scale:', obj1?.scale);
+    });
   });
 
   describe('Same Object - Different Property Updates', () => {
@@ -212,6 +233,57 @@ describe('Conflict Resolution', () => {
       console.log('User1 expected: position=[5,5,5], scale=[2,2,2]');
       console.log('User2 expected: rotation=[1,1,1], color=#00FF00');
     });
+
+    /**
+     * Scenario: User1 verplaatst object terwijl User2 roteert
+     */
+    it('should document move-vs-rotate conflict behavior', () => {
+      addSceneObject(user1.doc, createTestBox({
+        id: 'box-1',
+        position: [0, 0, 0],
+        rotation: [0, 0, 0]
+      }));
+
+      env.disableSync();
+
+      updateSceneObject(user1.doc, 'box-1', { position: [8, 0, 0] });
+      updateSceneObject(user2.doc, 'box-1', { rotation: [0, Math.PI / 2, 0] });
+
+      env.enableSync();
+
+      const obj1 = getSceneObject(user1.doc, 'box-1');
+      const obj2 = getSceneObject(user2.doc, 'box-1');
+
+      expect(obj1).toEqual(obj2);
+
+      console.log('Move-vs-rotate result:', obj1);
+      console.log('Note: concurrent operation types may overwrite each other due to whole-object replacement');
+    });
+
+    /**
+     * Scenario: User1 roteert terwijl User2 resize doet
+     */
+    it('should document rotate-vs-scale conflict behavior', () => {
+      addSceneObject(user1.doc, createTestBox({
+        id: 'box-1',
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1]
+      }));
+
+      env.disableSync();
+
+      updateSceneObject(user1.doc, 'box-1', { rotation: [Math.PI / 4, 0, 0] });
+      updateSceneObject(user2.doc, 'box-1', { scale: [3, 1, 1] });
+
+      env.enableSync();
+
+      const obj1 = getSceneObject(user1.doc, 'box-1');
+      const obj2 = getSceneObject(user2.doc, 'box-1');
+
+      expect(obj1).toEqual(obj2);
+
+      console.log('Rotate-vs-scale result:', obj1);
+    });
   });
 
   describe('Add vs Delete Conflicts', () => {
@@ -244,6 +316,48 @@ describe('Conflict Resolution', () => {
 
       // Beide moeten consistent zijn (wat de uitkomst ook is)
       expect(obj1).toEqual(obj2);
+    });
+
+    /**
+     * Scenario: User1 verwijdert terwijl User2 roteert
+     */
+    it('should handle delete vs rotate conflict', () => {
+      addSceneObject(user1.doc, createTestBox({ id: 'box-1', rotation: [0, 0, 0] }));
+
+      env.disableSync();
+
+      removeSceneObject(user1.doc, 'box-1');
+      updateSceneObject(user2.doc, 'box-1', { rotation: [0, Math.PI / 2, 0] });
+
+      env.enableSync();
+
+      const obj1 = getSceneObject(user1.doc, 'box-1');
+      const obj2 = getSceneObject(user2.doc, 'box-1');
+
+      expect(obj1).toEqual(obj2);
+
+      console.log('Delete vs Rotate - result:', obj1);
+    });
+
+    /**
+     * Scenario: User1 verwijdert terwijl User2 kleur aanpast
+     */
+    it('should handle delete vs color conflict', () => {
+      addSceneObject(user1.doc, createTestBox({ id: 'box-1', color: '#FFFFFF' }));
+
+      env.disableSync();
+
+      removeSceneObject(user1.doc, 'box-1');
+      updateSceneObject(user2.doc, 'box-1', { color: '#00FF00' });
+
+      env.enableSync();
+
+      const obj1 = getSceneObject(user1.doc, 'box-1');
+      const obj2 = getSceneObject(user2.doc, 'box-1');
+
+      expect(obj1).toEqual(obj2);
+
+      console.log('Delete vs Color - result:', obj1);
     });
 
     /**
@@ -338,6 +452,79 @@ describe('Conflict Resolution', () => {
 
       console.log('Unlink vs Move - result:', obj1);
     });
+
+    /**
+     * Scenario: Parent wordt verplaatst terwijl child tegelijk lokaal wordt bewerkt
+     */
+    it('should document parent-move while child-is-edited behavior', () => {
+      addSceneObject(user1.doc, createTestBox({
+        id: 'parent',
+        position: [0, 0, 0],
+        childIds: ['child']
+      }));
+      addSceneObject(user1.doc, createTestBox({
+        id: 'child',
+        parentId: 'parent',
+        position: [1, 0, 0],
+        rotation: [0, 0, 0]
+      }));
+
+      env.disableSync();
+
+      updateSceneObject(user1.doc, 'parent', { position: [10, 0, 0] });
+      updateSceneObject(user2.doc, 'child', { rotation: [0, 0, Math.PI / 2] });
+
+      env.enableSync();
+
+      const parent1 = getSceneObject(user1.doc, 'parent');
+      const parent2 = getSceneObject(user2.doc, 'parent');
+      const child1 = getSceneObject(user1.doc, 'child');
+      const child2 = getSceneObject(user2.doc, 'child');
+
+      expect(parent1).toEqual(parent2);
+      expect(child1).toEqual(child2);
+
+      console.log('Parent move + child edit result:', { parent: parent1, child: child1 });
+    });
+
+    /**
+     * Scenario: Beide users linken hetzelfde child object naar verschillende parents
+     * met childIds updates op parent objecten.
+     */
+    it('should document parent-child invariant drift during concurrent reparenting', () => {
+      addSceneObject(user1.doc, createTestBox({ id: 'parent-A', childIds: [] }));
+      addSceneObject(user1.doc, createTestBox({ id: 'parent-B', childIds: [] }));
+      addSceneObject(user1.doc, createTestBox({ id: 'child', parentId: null, childIds: [] }));
+
+      env.disableSync();
+
+      updateSceneObject(user1.doc, 'child', { parentId: 'parent-A' });
+      updateSceneObject(user1.doc, 'parent-A', { childIds: ['child'] });
+
+      updateSceneObject(user2.doc, 'child', { parentId: 'parent-B' });
+      updateSceneObject(user2.doc, 'parent-B', { childIds: ['child'] });
+
+      env.enableSync();
+
+      const child = getSceneObject(user1.doc, 'child');
+      const parentA = getSceneObject(user1.doc, 'parent-A');
+      const parentB = getSceneObject(user1.doc, 'parent-B');
+
+      const inA = Boolean(parentA?.childIds?.includes('child'));
+      const inB = Boolean(parentB?.childIds?.includes('child'));
+
+      expect(getSceneObject(user1.doc, 'child')).toEqual(getSceneObject(user2.doc, 'child'));
+      expect(getSceneObject(user1.doc, 'parent-A')).toEqual(getSceneObject(user2.doc, 'parent-A'));
+      expect(getSceneObject(user1.doc, 'parent-B')).toEqual(getSceneObject(user2.doc, 'parent-B'));
+
+      console.log('Concurrent reparenting result:', {
+        childParentId: child?.parentId,
+        parentAChildIds: parentA?.childIds,
+        parentBChildIds: parentB?.childIds,
+        linkedInA: inA,
+        linkedInB: inB
+      });
+    });
   });
 
   describe('Rapid Fire Conflict Scenarios', () => {
@@ -371,6 +558,98 @@ describe('Conflict Resolution', () => {
       expect(obj1?.position).toEqual(obj2?.position);
 
       console.log('Rapid fire - final position:', obj1?.position);
+    });
+
+    /**
+     * Scenario: Beide users doen meerdere operaties in dezelfde conflict window
+     */
+    it('should document batched-multi-operation conflicts', () => {
+      addSceneObject(user1.doc, createTestBox({
+        id: 'box-1',
+        position: [0, 0, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+        color: '#FFFFFF'
+      }));
+
+      env.disableSync();
+
+      // Reeks user1
+      updateSceneObject(user1.doc, 'box-1', { position: [1, 0, 0] });
+      updateSceneObject(user1.doc, 'box-1', { position: [3, 0, 0] });
+      updateSceneObject(user1.doc, 'box-1', { rotation: [0, Math.PI / 3, 0] });
+
+      // Reeks user2
+      updateSceneObject(user2.doc, 'box-1', { color: '#FF0000' });
+      updateSceneObject(user2.doc, 'box-1', { scale: [2, 2, 2] });
+      updateSceneObject(user2.doc, 'box-1', { position: [0, 4, 0] });
+
+      env.enableSync();
+
+      const final1 = getSceneObject(user1.doc, 'box-1');
+      const final2 = getSceneObject(user2.doc, 'box-1');
+
+      expect(final1).toEqual(final2);
+      console.log('Batched multi-operation result:', final1);
+    });
+
+    /**
+     * Scenario: Schaalbaarheid - >100 gebruikers werken tegelijk op hetzelfde object
+     */
+    it('should keep eventual consistency with 120 users editing one object', () => {
+      const manyUsers = [user1, user2];
+      for (let i = 3; i <= 120; i++) {
+        manyUsers.push(env.addUser(`user${i}`, `User ${i}`));
+      }
+
+      addSceneObject(user1.doc, createTestBox({ id: 'shared-box', position: [0, 0, 0] }));
+
+      env.disableSync();
+
+      manyUsers.forEach((u, index) => {
+        updateSceneObject(u.doc, 'shared-box', {
+          position: [index, index % 5, 0],
+          color: `#${((index + 1) * 11111).toString(16).slice(0, 6).padEnd(6, '0')}`
+        });
+      });
+
+      env.enableSync();
+
+      const baseline = getSceneObject(manyUsers[0].doc, 'shared-box');
+
+      manyUsers.forEach((u) => {
+        expect(getSceneObject(u.doc, 'shared-box')).toEqual(baseline);
+      });
+
+      console.log('120-user conflict result:', baseline);
+    });
+
+    /**
+     * Scenario: Schaalbaarheid op parent-child ketting
+     */
+    it('should keep a converged state under concurrent chain edits', () => {
+      addSceneObject(user1.doc, createTestBox({ id: 'root', childIds: ['node-1'] }));
+      addSceneObject(user1.doc, createTestBox({ id: 'node-1', parentId: 'root', childIds: ['node-2'] }));
+      addSceneObject(user1.doc, createTestBox({ id: 'node-2', parentId: 'node-1', childIds: [] }));
+
+      env.disableSync();
+
+      for (let i = 0; i < 15; i++) {
+        updateSceneObject(user1.doc, 'root', { position: [i, 0, 0] });
+        updateSceneObject(user2.doc, 'node-2', { rotation: [0, 0, i * 0.1] });
+      }
+
+      env.enableSync();
+
+      expect(getSceneObject(user1.doc, 'root')).toEqual(getSceneObject(user2.doc, 'root'));
+      expect(getSceneObject(user1.doc, 'node-1')).toEqual(getSceneObject(user2.doc, 'node-1'));
+      expect(getSceneObject(user1.doc, 'node-2')).toEqual(getSceneObject(user2.doc, 'node-2'));
+
+      console.log('Chain conflict result:', {
+        root: getSceneObject(user1.doc, 'root'),
+        node1: getSceneObject(user1.doc, 'node-1'),
+        node2: getSceneObject(user1.doc, 'node-2')
+      });
     });
   });
 

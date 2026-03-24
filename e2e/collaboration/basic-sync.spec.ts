@@ -5,7 +5,7 @@
  * met echte browser instances via Playwright.
  */
 
-import { test, expect, navigateAllUsers, setUserName, waitForSceneReady } from '../fixtures/collaboration-fixtures';
+import { test, expect, navigateAllUsers, setUserName, waitForSceneReady, resetCameraForAllUsers } from '../fixtures/collaboration-fixtures';
 
 test.describe('Multi-User Collaboration', () => {
   test('two users should see the same scene', async ({ createUsers }) => {
@@ -22,6 +22,7 @@ test.describe('Multi-User Collaboration', () => {
     // Wacht tot scene geladen is
     await waitForSceneReady(users[0]);
     await waitForSceneReady(users[1]);
+    await resetCameraForAllUsers(users);
     
     // Beide users moeten het canvas zien
     await expect(users[0].page.locator('canvas')).toBeVisible();
@@ -37,6 +38,7 @@ test.describe('Multi-User Collaboration', () => {
     
     await waitForSceneReady(users[0]);
     await waitForSceneReady(users[1]);
+    await resetCameraForAllUsers(users);
     
     // Wacht even voor presence sync
     await users[0].page.waitForTimeout(1000);
@@ -58,6 +60,7 @@ test.describe('Multi-User Collaboration', () => {
     
     await waitForSceneReady(users[0]);
     await waitForSceneReady(users[1]);
+    await resetCameraForAllUsers(users);
     
     // Gebruik de test hooks om een object toe te voegen via User1
     const boxId = await users[0].page.evaluate(() => {
@@ -96,6 +99,7 @@ test.describe('Scene Synchronization', () => {
     
     await waitForSceneReady(users[0]);
     await waitForSceneReady(users[1]);
+    await resetCameraForAllUsers(users);
     
     // Voer een aantal operaties uit via de UI
     // Dit is afhankelijk van je UI implementatie

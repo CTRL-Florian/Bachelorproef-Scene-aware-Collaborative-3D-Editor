@@ -14,10 +14,15 @@ declare global {
     // Test hooks
     getSceneObjectCount: () => number;
     getSceneState: () => any;
+    getSceneObjectById: (id: string) => any;
     isSceneReady: () => boolean;
     addTestBox: (position?: [number, number, number]) => string;
     removeTestObject: (id: string) => void;
     updateTestObjectPosition: (id: string, position: [number, number, number]) => void;
+    updateTestObjectRotation: (id: string, rotation: [number, number, number]) => void;
+    updateTestObjectScale: (id: string, scale: [number, number, number]) => void;
+    updateTestObjectColor: (id: string, color: string) => void;
+    resetCameraView: () => void;
   }
 }
 
@@ -59,6 +64,24 @@ export function initializeTestHooks(): void {
   };
 
   /**
+   * Krijg een specifiek object by id
+   */
+  window.getSceneObjectById = (id: string) => {
+    const obj = sceneStore.getObject(id);
+    if (!obj) return null;
+    return {
+      id: obj.id,
+      type: obj.type,
+      position: obj.position,
+      rotation: obj.rotation,
+      scale: obj.scale,
+      color: obj.color,
+      parentId: obj.parentId,
+      childIds: obj.childIds,
+    };
+  };
+
+  /**
    * Check of de scene klaar is (Yjs is gesynct)
    */
   window.isSceneReady = () => {
@@ -87,6 +110,39 @@ export function initializeTestHooks(): void {
    */
   window.updateTestObjectPosition = (id: string, position: [number, number, number]) => {
     sceneStore.updateObjectPosition(id, position);
+  };
+
+  /**
+   * Update rotatie van een test object
+   */
+  window.updateTestObjectRotation = (id: string, rotation: [number, number, number]) => {
+    sceneStore.updateObjectRotation(id, rotation);
+  };
+
+  /**
+   * Update schaal van een test object
+   */
+  window.updateTestObjectScale = (id: string, scale: [number, number, number]) => {
+    sceneStore.updateObjectScale(id, scale);
+  };
+
+  /**
+   * Update kleur van een test object
+   */
+  window.updateTestObjectColor = (id: string, color: string) => {
+    sceneStore.updateObjectColor(id, color);
+  };
+
+  /**
+   * Reset camera naar isometrische view (10, 10, 10)
+   * Simuleert het drukken van de 'r' toets in de editor
+   */
+  window.resetCameraView = () => {
+    const event = new KeyboardEvent('keydown', {
+      key: 'r',
+      bubbles: true,
+    });
+    document.dispatchEvent(event);
   };
 
   console.log('🧪 Test hooks initialized');

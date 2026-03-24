@@ -239,3 +239,20 @@ export async function waitForSceneReady(user: CollaborationUser): Promise<void> 
     return user.page.waitForTimeout(2000);
   });
 }
+
+/**
+ * Helper: Reset camera voor alle users naar isometrische view
+ */
+export async function resetCameraForAllUsers(users: CollaborationUser[]): Promise<void> {
+  await Promise.all(
+    users.map(user =>
+      user.page.evaluate(() => {
+        // @ts-ignore - window.resetCameraView wordt toegevoegd door de app voor testing
+        window.resetCameraView?.();
+      })
+    )
+  );
+  
+  // Wacht kort zodat camera updates worden verwerkt
+  await users[0].page.waitForTimeout(100);
+}
