@@ -22,7 +22,7 @@
 const WebSocket = require('ws');
 const http      = require('http');
 
-const PORT = process.env.PORT || 1234;
+const PORT = process.env.PORT || 1235;
 
 // ---------------------------------------------------------------------------
 // Transform function (mirrors src/collaboration/variants/variant-d.ts)

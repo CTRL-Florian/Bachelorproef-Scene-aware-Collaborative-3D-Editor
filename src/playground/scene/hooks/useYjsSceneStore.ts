@@ -3,6 +3,7 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import type { CollaborationStrategy, SceneObject } from '../../../collaboration/types';
 import { createYjsStrategy, activeVariant } from '../../../collaboration/factory';
+import { OTWebSocketClient } from '../../../collaboration/variants/variant-d';
 
 export type { SceneObject };
 
@@ -11,36 +12,69 @@ interface SceneState {
   selectedObjectId: string | null;
 }
 
-const WEBSOCKET_URL = 'ws://localhost:1234';
+const YJS_SERVER_URL = 'ws://localhost:1234';
+const OT_SERVER_URL  = 'ws://localhost:1235';
 const ROOM_NAME = 'scene-room';
 
+const DEFAULT_BOX = () => ({
+  id: 'box-default',
+  type: 'box' as const,
+  position: [0, 0, 0] as [number, number, number],
+  rotation: [0, 0, 0] as [number, number, number],
+  scale:    [1, 1, 1] as [number, number, number],
+  color: 'orange',
+  parentId: null,
+  childIds: [],
+});
+
 class YjsSceneStore {
-  private ydoc: Y.Doc;
-  private wsProvider: WebsocketProvider;
+  private ydoc: Y.Doc | null = null;
+  private wsProvider: WebsocketProvider | null = null;
   private strategy: CollaborationStrategy;
   private listeners = new Set<() => void>();
 
   constructor() {
-    this.ydoc = new Y.Doc();
-    this.wsProvider = new WebsocketProvider(WEBSOCKET_URL, ROOM_NAME, this.ydoc);
-
     const variant = activeVariant();
-    // Variant D uses the OT server; for the browser we still create a Y.js
-    // strategy so the rest of the UI keeps working. Full Variant D production
-    // integration (OTWebSocketClient) is handled by server-ot.cjs.
-    this.strategy = createYjsStrategy(variant === 'D' ? 'A' : variant, this.ydoc);
+
+    if (variant === 'D') {
+      // Variant D: pure OT over WebSocket — no Y.js involved
+      this.strategy = new OTWebSocketClient(
+        OT_SERVER_URL,
+        ROOM_NAME,
+        undefined,
+        (client) => {
+          // Add the default box on first connect if the room is empty
+          if (client.getAllObjects().size === 0) {
+            this.addObject('box-default', 'box', [0, 0, 0], [0, 0, 0], [1, 1, 1], 'orange');
+          }
+        },
+      );
+    } else {
+      // Variants A, B, C: Y.js CRDT over WebSocket
+      this.ydoc = new Y.Doc();
+      this.wsProvider = new WebsocketProvider(YJS_SERVER_URL, ROOM_NAME, this.ydoc);
+      this.strategy = createYjsStrategy(variant, this.ydoc);
+
+      this.wsProvider.on('sync', (isSynced: boolean) => {
+        if (isSynced && this.strategy.getAllObjects().size === 0) {
+          this.addObject('box-default', 'box', [0, 0, 0], [0, 0, 0], [1, 1, 1], 'orange');
+        }
+      });
+    }
 
     this.strategy.subscribe(() => this.notifyListeners());
-
-    this.wsProvider.on('sync', (isSynced: boolean) => {
-      if (isSynced && this.strategy.getAllObjects().size === 0) {
-        this.addObject('box-default', 'box', [0, 0, 0], [0, 0, 0], [1, 1, 1], 'orange');
-      }
-    });
   }
 
-  getProvider(): WebsocketProvider {
-    return this.wsProvider;
+  /** Returns a synced-like object so E2E hooks work for all variants. */
+  getSyncStatus(): { synced: boolean } {
+    if (this.wsProvider) return this.wsProvider;
+    // For variant D: read the OTWebSocketClient's synced property
+    return { synced: (this.strategy as OTWebSocketClient).synced ?? false };
+  }
+
+  /** @deprecated use getSyncStatus() — kept for legacy test-hooks compatibility */
+  getProvider(): { synced: boolean } {
+    return this.getSyncStatus();
   }
 
   addObject(
@@ -132,16 +166,16 @@ export function useYjsSceneStore() {
 
   return {
     state,
-    addObject: store.addObject.bind(store),
-    removeObject: store.removeObject.bind(store),
-    updateObject: store.updateObject.bind(store),
-    moveObject: store.moveObject.bind(store),
+    addObject:            store.addObject.bind(store),
+    removeObject:         store.removeObject.bind(store),
+    updateObject:         store.updateObject.bind(store),
+    moveObject:           store.moveObject.bind(store),
     updateObjectPosition: store.updateObjectPosition.bind(store),
     updateObjectRotation: store.updateObjectRotation.bind(store),
-    updateObjectScale: store.updateObjectScale.bind(store),
-    updateObjectColor: store.updateObjectColor.bind(store),
-    getObject: store.getObject.bind(store),
-    linkObject: store.linkObject.bind(store),
-    unlinkObject: store.unlinkObject.bind(store),
+    updateObjectScale:    store.updateObjectScale.bind(store),
+    updateObjectColor:    store.updateObjectColor.bind(store),
+    getObject:            store.getObject.bind(store),
+    linkObject:           store.linkObject.bind(store),
+    unlinkObject:         store.unlinkObject.bind(store),
   };
 }

@@ -2,19 +2,20 @@
 
 ## De app starten
 
-De app heeft twee processen nodig: een Y.js WebSocket server en de Vite dev server.
+De app heeft twee processen nodig: een server en de Vite dev frontend.
 
-```bash
-# Terminal 1 — Y.js sync server (voor varianten A, B, C)
-npm run server
-
-# Terminal 2 — Frontend
-npm run dev
-```
+| Variant | Terminal 1 (server) | Terminal 2 (frontend) | `.env.local` |
+|---------|--------------------|-----------------------|-------------|
+| A (standaard) | `npm run server` | `npm run dev` | niet nodig |
+| B | `npm run server` | `npm run dev` | `VITE_COLLAB_VARIANT=B` |
+| C | `npm run server` | `npm run dev` | `VITE_COLLAB_VARIANT=C` |
+| D | `npm run server:ot` | `npm run dev` | `VITE_COLLAB_VARIANT=D` |
 
 Open daarna `http://localhost:5173` in je browser. Bij het openen vraagt de app om een gebruikersnaam.
 
 Om twee gebruikers tegelijk te simuleren: open de app in twee tabbladen of twee browsers. Beide zien dezelfde 3D scene in real-time.
+
+Na het wijzigen van `.env.local`: herstart `npm run dev` (de server hoeft niet opnieuw).
 
 ### Variant instellen
 
@@ -35,13 +36,22 @@ Variant B — Property CRDT
 
 ### Variant D (OT server)
 
-Variant D heeft een aparte server nodig in plaats van `npm run server`:
+Variant D heeft een aparte server nodig op poort 1235 (in plaats van de Y.js server op 1234):
 
 ```bash
-npm run server:ot   # poort 1235
+# Terminal 1 — OT server (vervangt npm run server)
+npm run server:ot
+
+# Terminal 2 — Frontend
+npm run dev
 ```
 
-Stel daarna in `.env.local` in: `VITE_COLLAB_VARIANT=D`.
+Stel daarna in `.env.local` in:
+```
+VITE_COLLAB_VARIANT=D
+```
+
+De browser verbindt dan automatisch met `ws://localhost:1235` via een eigen WebSocket-protocol (JSON OT operaties). De Y.js server is dan niet nodig.
 
 ---
 

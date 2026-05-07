@@ -363,6 +363,210 @@ export class VariantDClient implements CollaborationStrategy {
 }
 
 // ---------------------------------------------------------------------------
+// WebSocket OT client (browser / production)
+// ---------------------------------------------------------------------------
+
+/**
+ * OTWebSocketClient connects to server-ot.cjs over a real WebSocket.
+ *
+ * Protocol:
+ *   → { type: 'sync_request', clientId }           ask for current state
+ *   ← { type: 'sync_response', revision, objects } full state snapshot
+ *   → { type: 'submit', op }                        submit an operation
+ *   ← { type: 'op', op }                            broadcast from server
+ *
+ * On reconnect the client re-requests the full state, resets its revision,
+ * and re-flushes any ops that were buffered while offline.
+ */
+export class OTWebSocketClient implements CollaborationStrategy {
+  private localState = new Map<string, SceneObject>();
+  private clientRevision = 0;
+  private pendingOps: OTOperation[] = [];
+  private ws: WebSocket | null = null;
+  private listeners = new Set<() => void>();
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private _synced = false;
+  readonly clientId: string;
+
+  constructor(
+    private readonly url: string,
+    private readonly room: string,
+    clientId?: string,
+    /** Called once after the first sync_response with a non-empty (or empty) scene. */
+    private readonly onFirstSync?: (client: OTWebSocketClient) => void,
+  ) {
+    this.clientId = clientId ?? `client-${Math.random().toString(36).slice(2, 9)}`;
+    this.connect();
+  }
+
+  get synced(): boolean { return this._synced; }
+
+  // -- Connection management --
+
+  private connect(): void {
+    const ws = new WebSocket(`${this.url}/${this.room}`);
+    this.ws = ws;
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: 'sync_request', clientId: this.clientId }));
+    };
+
+    ws.onmessage = (event: MessageEvent) => {
+      let msg: Record<string, unknown>;
+      try { msg = JSON.parse(event.data as string); } catch { return; }
+
+      if (msg.type === 'sync_response') {
+        const objects = msg.objects as SceneObject[];
+        this.localState = new Map(objects.map(o => [o.id, { ...o }]));
+        this.clientRevision = msg.revision as number;
+        this._synced = true;
+
+        // Flush ops that were queued before the connection was ready
+        const queued = [...this.pendingOps];
+        this.pendingOps = [];
+        for (const op of queued) this.flushOp(op);
+
+        this.notifyListeners();
+        this.onFirstSync?.(this);
+      } else if (msg.type === 'op') {
+        this.onServerOp(msg.op as ServerOperation);
+      }
+    };
+
+    ws.onclose = () => {
+      this._synced = false;
+      this.reconnectTimer = setTimeout(() => this.connect(), 2000);
+    };
+
+    ws.onerror = () => { ws.close(); };
+  }
+
+  private onServerOp(op: ServerOperation): void {
+    this.clientRevision = op.serverRevision;
+    this.applyToLocal(op);
+    this.notifyListeners();
+  }
+
+  private flushOp(op: OTOperation): void {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: 'submit', op }));
+    } else {
+      this.pendingOps.push(op);
+    }
+  }
+
+  private send(partial: Omit<OTOperation, 'clientId' | 'clientRevision'>): void {
+    const op: OTOperation = {
+      ...partial,
+      clientId: this.clientId,
+      clientRevision: this.clientRevision,
+    };
+    this.flushOp(op);
+  }
+
+  private applyToLocal(op: ServerOperation): void {
+    switch (op.type) {
+      case 'create':
+        if (op.object) this.localState.set(op.id, { ...op.object });
+        break;
+      case 'delete':
+        this.localState.delete(op.id);
+        break;
+      case 'setProperty': {
+        const obj = this.localState.get(op.id);
+        if (obj && op.property) (obj as Record<string, unknown>)[op.property] = op.value;
+        break;
+      }
+      case 'reparent': {
+        const child = this.localState.get(op.id);
+        if (!child) break;
+        if (child.parentId) {
+          const old = this.localState.get(child.parentId);
+          if (old) old.childIds = old.childIds.filter(id => id !== op.id);
+        }
+        child.parentId = op.newParentId ?? null;
+        if (op.newParentId) {
+          const np = this.localState.get(op.newParentId);
+          if (np && !np.childIds.includes(op.id)) np.childIds = [...np.childIds, op.id];
+        }
+        break;
+      }
+      case 'noop':
+        break;
+    }
+  }
+
+  // -- CollaborationStrategy --
+
+  addObject(id: string, obj: SceneObject): void {
+    this.send({ type: 'create', id, object: { ...obj, id } });
+  }
+
+  updateObject(id: string, updates: Partial<SceneObject>): void {
+    for (const [k, v] of Object.entries(updates)) {
+      this.send({ type: 'setProperty', id, property: k as keyof SceneObject, value: v });
+    }
+  }
+
+  moveObject(id: string, delta: [number, number, number]): void {
+    const obj = this.localState.get(id);
+    if (!obj) return;
+    const newPos: [number, number, number] = [
+      obj.position[0] + delta[0],
+      obj.position[1] + delta[1],
+      obj.position[2] + delta[2],
+    ];
+    this.send({ type: 'setProperty', id, property: 'position', value: newPos });
+  }
+
+  removeObject(id: string): void {
+    this.send({ type: 'delete', id });
+  }
+
+  linkObject(childId: string, parentId: string): void {
+    const child = this.localState.get(childId);
+    if (!child) return;
+    const { position, rotation } = computeLinkTransform(child, parentId, this.getAllObjects());
+    this.send({ type: 'reparent', id: childId, newParentId: parentId, oldParentId: child.parentId });
+    this.send({ type: 'setProperty', id: childId, property: 'position', value: position });
+    this.send({ type: 'setProperty', id: childId, property: 'rotation', value: rotation });
+  }
+
+  unlinkObject(childId: string): void {
+    const child = this.localState.get(childId);
+    if (!child || !child.parentId) return;
+    const { position, rotation } = computeUnlinkTransform(child, this.getAllObjects());
+    this.send({ type: 'reparent', id: childId, newParentId: null, oldParentId: child.parentId });
+    this.send({ type: 'setProperty', id: childId, property: 'position', value: position });
+    this.send({ type: 'setProperty', id: childId, property: 'rotation', value: rotation });
+  }
+
+  getObject(id: string): SceneObject | undefined {
+    return this.localState.get(id);
+  }
+
+  getAllObjects(): Map<string, SceneObject> {
+    return new Map(this.localState);
+  }
+
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  destroy(): void {
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    this.ws?.close();
+    this.ws = null;
+    this.listeners.clear();
+  }
+
+  private notifyListeners(): void {
+    this.listeners.forEach(l => l());
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Test environment factory for Variant D
 // ---------------------------------------------------------------------------
 
