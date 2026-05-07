@@ -23,8 +23,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
+    "test:cross-variant": "vitest run src/test/variants/cross-variant.test.ts",
     "test:collab": "playwright test --project=collaboration",
-    "test:network": "playwright test --project=network",
     "test:all": "npm run test:run && npm run test:e2e"
   },
   "dependencies": {
