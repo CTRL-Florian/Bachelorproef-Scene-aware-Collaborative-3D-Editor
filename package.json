@@ -25,7 +25,8 @@
     "test:e2e:debug": "playwright test --debug",
     "test:cross-variant": "vitest run src/test/variants/cross-variant.test.ts",
     "test:collab": "playwright test --project=collaboration",
-    "test:all": "npm run test:run && npm run test:e2e"
+    "test:all": "npm run test:run && npm run test:e2e",
+    "report": "node scripts/report.cjs"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",
