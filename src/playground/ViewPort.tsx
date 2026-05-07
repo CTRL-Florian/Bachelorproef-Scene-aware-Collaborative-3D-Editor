@@ -6,9 +6,18 @@ import SceneCamera from '@/playground/scene/SceneCamera';
 import SceneContent from '@/playground/scene/SceneContent';
 import SceneGrid from '@/playground/scene/SceneGrid';
 import { useLinkModeStore } from '@/playground/hooks/useLinkModeStore';
+import { activeVariant } from '@/collaboration/factory';
+
+const VARIANT_LABELS: Record<string, string> = {
+  A: 'A — Object LWW',
+  B: 'B — Property CRDT',
+  C: 'C — Delta log',
+  D: 'D — OT server',
+};
 
 const ViewPort: React.FC = () => {
     const { isLinking, cancelLinking } = useLinkModeStore();
+    const variant = activeVariant();
 
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -19,6 +28,24 @@ const ViewPort: React.FC = () => {
                 <SceneAxes />
                 <SceneContent />
             </Canvas>
+
+            {/* Variant badge — bottom-right corner */}
+            <div style={{
+                position: 'absolute',
+                bottom: 10,
+                right: 10,
+                background: 'rgba(0,0,0,0.65)',
+                color: '#fff',
+                fontSize: 11,
+                fontFamily: 'monospace',
+                padding: '3px 8px',
+                borderRadius: 4,
+                pointerEvents: 'none',
+                zIndex: 5,
+                letterSpacing: '0.02em',
+            }}>
+                Variant {VARIANT_LABELS[variant] ?? variant}
+            </div>
 
             {/* Link mode overlay: rode rand en bericht */}
             {isLinking && (

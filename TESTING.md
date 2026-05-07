@@ -16,15 +16,32 @@ Open daarna `http://localhost:5173` in je browser. Bij het openen vraagt de app 
 
 Om twee gebruikers tegelijk te simuleren: open de app in twee tabbladen of twee browsers. Beide zien dezelfde 3D scene in real-time.
 
+### Variant instellen
+
+De actieve variant stel je in via een omgevingsvariabele. Maak een `.env.local` bestand aan in de projectroot:
+
+```bash
+# .env.local
+VITE_COLLAB_VARIANT=B
+```
+
+Geldige waarden: `A`, `B`, `C`, `D`. Standaard is `A`.
+
+Je ziet altijd welke variant actief is via het badge rechtsonder in het 3D-canvas:
+
+```
+Variant B — Property CRDT
+```
+
 ### Variant D (OT server)
 
-Variant D heeft een aparte server nodig:
+Variant D heeft een aparte server nodig in plaats van `npm run server`:
 
 ```bash
 npm run server:ot   # poort 1235
 ```
 
-De actieve variant stel je in via de omgevingsvariabele `VITE_COLLAB_VARIANT` (A/B/C/D). Standaard is A.
+Stel daarna in `.env.local` in: `VITE_COLLAB_VARIANT=D`.
 
 ---
 
