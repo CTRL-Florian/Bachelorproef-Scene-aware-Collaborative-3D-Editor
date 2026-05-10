@@ -15,12 +15,45 @@
  *   S11 — Multi-property stress (5 properties, two users)
  *   S12 — Regression move (undo-like scenario)
  *   S13 — Sequential edits from one user + concurrent from another
+ *   S14 — Clean 4-property split (the definitive A-vs-B test)
+ *   S15 — Nudge accumulation (the definitive A/B-vs-C test)
+ *
+ * VariantConfig controls which hard assertions are enabled:
+ *
+ *   propertyLevel:    true for B, C, D — their guarantee is that concurrent edits
+ *                     to *different* properties MUST both survive. Scenarios that
+ *                     test this (S2, S8, S14) add expect() calls that fail if the
+ *                     variant regresses.
+ *
+ *   deltaCommutative: true for C only — moveObject deltas MUST accumulate (sum),
+ *                     not race. Scenarios S4, S15 add expect() calls for this.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { CollaborationStrategy, SceneObject, TestEnv } from '../../collaboration/types';
 
 type EnvFactory = () => TestEnv;
+
+// ---------------------------------------------------------------------------
+// VariantConfig — controls which hard assertions are active
+// ---------------------------------------------------------------------------
+
+export interface VariantConfig {
+  /**
+   * Set true for Variants B, C, D.
+   * Adds assertions: concurrent edits to different properties MUST both survive.
+   */
+  propertyLevel: boolean;
+  /**
+   * Set true for Variant C only.
+   * Adds assertions: concurrent moveObject deltas MUST sum (not overwrite).
+   */
+  deltaCommutative: boolean;
+}
+
+export const BASELINE_CONFIG:        VariantConfig = { propertyLevel: false, deltaCommutative: false };
+export const PROPERTY_LEVEL_CONFIG:  VariantConfig = { propertyLevel: true,  deltaCommutative: false };
+export const DELTA_COMMUTATIVE_CONFIG: VariantConfig = { propertyLevel: true,  deltaCommutative: true  };
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -135,7 +168,11 @@ function reportDetailed(
 // Shared scenario suite
 // ---------------------------------------------------------------------------
 
-export function runSharedScenarios(variantName: string, makeEnv: EnvFactory): void {
+export function runSharedScenarios(
+  variantName: string,
+  makeEnv: EnvFactory,
+  config: VariantConfig = BASELINE_CONFIG,
+): void {
 
   // ── S1: Same property ────────────────────────────────────────────────────
 
@@ -213,6 +250,13 @@ export function runSharedScenarios(variantName: string, makeEnv: EnvFactory): vo
       env.enableSync();
 
       const final = assertConverged(env.alice, env.bob, 'box-1');
+
+      // Hard assertion for B, C, D: independent properties MUST both survive
+      if (config.propertyLevel) {
+        expect(final.position).toEqual([10, 0, 0]);
+        expect(final.color).toBe('#FF0000');
+      }
+
       const as = intentScore({ position: [10, 0, 0] }, final);
       const bs = intentScore({ color: '#FF0000' },     final);
 
@@ -237,6 +281,13 @@ export function runSharedScenarios(variantName: string, makeEnv: EnvFactory): vo
       env.enableSync();
 
       const final = assertConverged(env.alice, env.bob, 'box-1');
+
+      // Hard assertion for B, C, D
+      if (config.propertyLevel) {
+        expect(final.rotation[0]).toBeCloseTo(Math.PI / 2);
+        expect(final.scale).toEqual([2, 2, 2]);
+      }
+
       const as = intentScore({ rotation: [Math.PI / 2, 0, 0] }, final);
       const bs = intentScore({ scale: [2, 2, 2] },               final);
 
@@ -319,6 +370,12 @@ export function runSharedScenarios(variantName: string, makeEnv: EnvFactory): vo
       env.enableSync();
 
       const final = assertConverged(env.alice, env.bob, 'box-1');
+
+      // Hard assertion for C: delta commutativity means BOTH deltas must be applied
+      if (config.deltaCommutative) {
+        expect(final.position[0]).toBeCloseTo(8);
+      }
+
       const bothApplied = Math.abs(final.position[0] - 8) < 0.001;
       const x = final.position[0];
 
@@ -563,6 +620,15 @@ export function runSharedScenarios(variantName: string, makeEnv: EnvFactory): vo
       env.enableSync();
 
       const final = assertConverged(env.alice, env.bob, 'box-1');
+
+      // Hard assertion for B, C, D: all 4 independent properties must survive
+      if (config.propertyLevel) {
+        expect(final.position).toEqual([10, 0, 0]);
+        expect(final.rotation[0]).toBeCloseTo(Math.PI / 4);
+        expect(final.scale).toEqual([2, 2, 2]);
+        expect(final.color).toBe('#ABCDEF');
+      }
+
       const as = intentScore({ position: [10, 0, 0], rotation: [Math.PI / 4, 0, 0], scale: [2, 2, 2] }, final);
       const bs = intentScore({ color: '#ABCDEF' }, final);
 
@@ -841,6 +907,14 @@ export function runSharedScenarios(variantName: string, makeEnv: EnvFactory): vo
       const bobPosWon   = JSON.stringify(final.position) === JSON.stringify([99, 0, 0]);
 
       // Alice's non-conflicting properties should survive in good variants
+      if (config.propertyLevel) {
+        expect(rotOk).toBe(true);
+        expect(scaleOk).toBe(true);
+        expect(colorOk).toBe(true);
+        // position IS conflicting — one of them wins; we don't assert which
+        expect(alicePosWon || bobPosWon).toBe(true);
+      }
+
       const aliceNonConflict = [rotOk, scaleOk, colorOk].filter(Boolean).length;
 
       reportDetailed(variantName, 'S13-sequential-chain', {
@@ -852,6 +926,118 @@ export function runSharedScenarios(variantName: string, makeEnv: EnvFactory): vo
         aliceScore: (aliceNonConflict / 3 + (alicePosWon ? 1 : 0)) / 2,
         bobScore:   bobPosWon ? 1 : 0,
         note: `alice non-conflict ${aliceNonConflict}/3 rot=${rotOk} scale=${scaleOk} color=${colorOk} pos-winner=${alicePosWon ? 'alice' : 'bob'}`,
+      });
+    });
+  });
+
+  // ── S14: Clean 4-property split ───────────────────────────────────────────
+  // THE definitive test for property-level independence.
+  //
+  // Alice and Bob each edit two DIFFERENT properties — zero overlap.
+  //
+  //   Variant A:   whole-object LWW → exactly one peer's two writes survive
+  //                (either position+rotation OR scale+color, never all 4)
+  //   Variant B/C/D: property-level → ALL 4 changes survive (guaranteed)
+  //
+  // For B, C, D this test has hard assertions. For A it documents the loss.
+
+  describe(`[${variantName}] S14 — Clean 4-property split (definitive A-vs-B test)`, () => {
+    let env: TestEnv;
+    beforeEach(() => { env = makeEnv(); });
+    afterEach(() => env.cleanup());
+
+    it('alice: position+rotation  bob: scale+color — zero overlap, all 4 must survive in property-level variants', () => {
+      env.alice.addObject('box-1', defaultBox());
+      env.disableSync();
+
+      env.alice.updateObject('box-1', { position: [7, 0, 0], rotation: [1, 0, 0] });
+      env.bob.updateObject('box-1',   { scale: [3, 3, 3],    color: '#ABCDEF' });
+
+      env.enableSync();
+
+      const final = assertConverged(env.alice, env.bob, 'box-1');
+      const posOk   = JSON.stringify(final.position) === JSON.stringify([7, 0, 0]);
+      const rotOk   = Math.abs(final.rotation[0] - 1) < 0.001;
+      const scaleOk = JSON.stringify(final.scale)    === JSON.stringify([3, 3, 3]);
+      const colorOk = final.color === '#ABCDEF';
+      const total   = [posOk, rotOk, scaleOk, colorOk].filter(Boolean).length;
+
+      // B, C, D MUST preserve all 4 — this is their core guarantee
+      if (config.propertyLevel) {
+        expect(posOk).toBe(true);
+        expect(rotOk).toBe(true);
+        expect(scaleOk).toBe(true);
+        expect(colorOk).toBe(true);
+      } else {
+        // A: whole-object LWW → exactly one peer's writes survive (never all 4)
+        expect(total).toBeLessThan(4);
+      }
+
+      reportDetailed(variantName, 'S14-clean-split', {
+        converged: true,
+        aliceIntended: { position: [7, 0, 0], rotation: [1, 0, 0] },
+        bobIntended:   { scale: [3, 3, 3], color: '#ABCDEF' },
+        initialState:  { position: [0,0,0], rotation: [0,0,0], scale: [1,1,1], color: '#FFFFFF' },
+        finalState:    { position: final.position, rotation: final.rotation, scale: final.scale, color: final.color },
+        aliceScore: (posOk && rotOk) ? 1 : (posOk || rotOk) ? 0.5 : 0,
+        bobScore:   (scaleOk && colorOk) ? 1 : (scaleOk || colorOk) ? 0.5 : 0,
+        note: `${total}/4 properties preserved  pos=${posOk} rot=${rotOk} scale=${scaleOk} color=${colorOk}`,
+      });
+    });
+  });
+
+  // ── S15: Nudge accumulation ───────────────────────────────────────────────
+  // THE definitive test for delta commutativity.
+  //
+  // Both peers go offline and each nudge the object multiple times.
+  // After sync the expected result depends on the variant:
+  //
+  //   Variant A/B/D: moveObject uses LWW → one peer's nudges overwrite the other
+  //                  Result: either alice's total (+3) or bob's total (+2), never 5
+  //   Variant C:     delta log → ALL nudges accumulate
+  //                  Result: always +3+2 = +5 regardless of arrival order
+  //
+  // For C this test has a hard assertion. For A/B/D it documents the loss.
+
+  describe(`[${variantName}] S15 — Nudge accumulation (definitive A/B-vs-C test)`, () => {
+    let env: TestEnv;
+    beforeEach(() => { env = makeEnv(); });
+    afterEach(() => env.cleanup());
+
+    it('alice nudges 3× and bob nudges 2× offline — C must sum to 5, A/B/D lose some nudges', () => {
+      env.alice.addObject('box-1', defaultBox({ position: [0, 0, 0] }));
+      env.disableSync();
+
+      env.alice.moveObject('box-1', [1, 0, 0]);
+      env.alice.moveObject('box-1', [1, 0, 0]);
+      env.alice.moveObject('box-1', [1, 0, 0]);  // alice total: +3
+
+      env.bob.moveObject('box-1', [1, 0, 0]);
+      env.bob.moveObject('box-1', [1, 0, 0]);    // bob total: +2
+
+      env.enableSync();
+
+      const final = assertConverged(env.alice, env.bob, 'box-1');
+      const x = final.position[0];
+      const allAccumulated = Math.abs(x - 5) < 0.001;
+
+      // C MUST apply all nudges — this is its core delta commutativity guarantee
+      if (config.deltaCommutative) {
+        expect(x).toBeCloseTo(5);
+      } else {
+        // A, B, D: one set of nudges wins; result is 3 or 2, never 5
+        expect(Math.abs(x - 5)).toBeGreaterThan(0.1);
+      }
+
+      reportDetailed(variantName, 'S15-nudge-accumulation', {
+        converged: true,
+        aliceIntended: { 'nudges': '+3 (three ×[1,0,0])' },
+        bobIntended:   { 'nudges': '+2 (two ×[1,0,0])' },
+        initialState:  { position: [0, 0, 0] },
+        finalState:    { position: final.position },
+        aliceScore: allAccumulated ? 1 : Math.abs(x - 3) < 0.001 ? 1 : 0,
+        bobScore:   allAccumulated ? 1 : Math.abs(x - 2) < 0.001 ? 1 : 0,
+        note: `x=${x}  ideal=5  ${allAccumulated ? 'ALL nudges accumulated ✓' : `only partial (LWW): ${x}`}`,
       });
     });
   });

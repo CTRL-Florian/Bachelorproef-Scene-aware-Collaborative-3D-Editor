@@ -16,10 +16,12 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createTestEnv } from '../../collaboration/factory';
-import { runSharedScenarios } from './shared-scenarios';
+import { runSharedScenarios, DELTA_COMMUTATIVE_CONFIG } from './shared-scenarios';
 import type { SceneObject, TestEnv } from '../../collaboration/types';
 
-runSharedScenarios('Variant C', () => createTestEnv('C'));
+// Variant C guarantees both property-level independence (like B) AND delta
+// commutativity for moveObject: all concurrent nudges must accumulate.
+runSharedScenarios('Variant C', () => createTestEnv('C'), DELTA_COMMUTATIVE_CONFIG);
 
 // ---------------------------------------------------------------------------
 // Variant C specific: commutativity and log accumulation

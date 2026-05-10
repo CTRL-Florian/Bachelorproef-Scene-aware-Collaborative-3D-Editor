@@ -18,11 +18,13 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createTestEnv } from '../../collaboration/factory';
-import { runSharedScenarios } from './shared-scenarios';
+import { runSharedScenarios, PROPERTY_LEVEL_CONFIG } from './shared-scenarios';
 import { InMemoryOTServer, VariantDClient, transform } from '../../collaboration/variants/variant-d';
 import type { SceneObject, TestEnv } from '../../collaboration/types';
 
-runSharedScenarios('Variant D', () => createTestEnv('D'));
+// Variant D guarantees property-level independence (like B) via OT transform().
+// Delta commutativity is NOT guaranteed — moveObject uses OT, not a delta log.
+runSharedScenarios('Variant D', () => createTestEnv('D'), PROPERTY_LEVEL_CONFIG);
 
 // ---------------------------------------------------------------------------
 // Unit tests: transform() function — full matrix coverage

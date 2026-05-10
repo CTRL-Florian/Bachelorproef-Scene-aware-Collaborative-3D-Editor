@@ -11,10 +11,12 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createTestEnv } from '../../collaboration/factory';
-import { runSharedScenarios } from './shared-scenarios';
+import { runSharedScenarios, BASELINE_CONFIG } from './shared-scenarios';
 import type { SceneObject, TestEnv } from '../../collaboration/types';
 
-runSharedScenarios('Variant A', () => createTestEnv('A'));
+// Variant A: no property-independence or delta-commutativity guarantees.
+// The shared scenarios document its behaviour without expecting those guarantees.
+runSharedScenarios('Variant A', () => createTestEnv('A'), BASELINE_CONFIG);
 
 // ---------------------------------------------------------------------------
 // Variant A specific: whole-object replacement and data loss quantification

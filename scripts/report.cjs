@@ -136,6 +136,8 @@ const SCENARIO_LABELS = {
   'S11-stress':               'S11 — Multi-property stress',
   'S12-undo-vs-move':         'S12 — Undo vs. verdere verplaatsing',
   'S13-sequential-chain':     'S13 — Sequentiële keten + concurrent',
+  'S14-clean-split':          'S14 ★ — Schone split: 4 properties, 0 overlap (A vs B/C/D)',
+  'S15-nudge-accumulation':   'S15 ★ — Nudge-accumulatie: delta vs. LWW (A/B/D vs C)',
 };
 
 /** What each test does — shown as the scenario description in the HTML */
@@ -163,6 +165,18 @@ const SCENARIO_DESCRIPTIONS = {
   'S11-stress':            'Stresstest met 6 gelijktijdige edits: Alice past 4 properties aan (positie, rotatie, schaal, kleur), Bob past er 2 aan (kleur en rotatie — <em>beide overlappen</em> met Alice). Hoeveel van de 6 bedoelde wijzigingen overleven? En welke properties veroorzaken conflicten?',
   'S12-undo-vs-move':      'Het object staat op positie [5,5,5]. Alice "ondoet" de laatste bewerking en zet het terug op [0,0,0], Bob verplaatst verder naar [10,10,10]. Gelijktijdig. Wie wint: de undo of de vooruitgang? Illustreert dat geen enkele variant natively "undo" begrijpt — het is gewoon een LWW-conflict op positie.',
   'S13-sequential-chain':  'Alice doet 4 opeenvolgende offline wijzigingen aan <em>verschillende</em> properties (positie, rotatie, schaal, kleur), Bob doet 1 wijziging aan de positie (conflict!). Na sync: overleven Alice\'s 3 niet-conflicterende properties? En wie wint bij de positie?',
+  'S14-clean-split':
+    '<strong>★ Kerndemonstratie: A vs. B/C/D.</strong> Alice en Bob bewerken elk twee <em>volledig verschillende</em> properties — nul overlap. ' +
+    'Alice wijzigt positie + rotatie, Bob wijzigt schaal + kleur. ' +
+    'Variant A slaat het hele object als één blob op: de verliezende write verdwijnt compleet, inclusief zijn twee niet-conflicterende properties. ' +
+    'Varianten B, C en D bewaren alle 4 eigenschappen omdat ze per property bijhouden wie wanneer wat schreef. ' +
+    '<em>Dit is het beste enkelvoudige scenario om het voordeel van property-level granulariteit te demonstreren.</em>',
+  'S15-nudge-accumulation':
+    '<strong>★ Kerndemonstratie: A/B/D vs. C.</strong> Alice "nudget" het object 3× door [+1,0,0], Bob nudget 2× door [+1,0,0] — allemaal offline. ' +
+    'Ideale uitkomst: x = 5 (alle vijf nudges opgeteld). ' +
+    'Variant C slaat elke <code>moveObject</code>-aanroep op als een aparte delta in een Y.Array log; bij sync worden alle deltas gesommeerd — volgorde maakt niet uit. ' +
+    'Varianten A, B en D gebruiken LWW op de positie-property: de laatste absolute waarde wint. Eén peer\'s nudges overschrijven die van de ander. ' +
+    '<em>Dit is het beste scenario om Variant C\'s unieke delta-commutatief gedrag te demonstreren.</em>',
 };
 
 /** Per variant, per verdict: explain WHY */
@@ -207,6 +221,8 @@ const S_TITLES = {
   S11: 'S11 — Multi-property stress',
   S12: 'S12 — Undo vs. verdere verplaatsing',
   S13: 'S13 — Sequentiële keten + concurrent',
+  S14: 'S14 ★ — Schone split: 4 properties, 0 overlap (A vs B/C/D)',
+  S15: 'S15 ★ — Nudge-accumulatie: delta vs. LWW (A/B/D vs C)',
 };
 
 // ---------------------------------------------------------------------------

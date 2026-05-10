@@ -11,10 +11,12 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createTestEnv } from '../../collaboration/factory';
-import { runSharedScenarios } from './shared-scenarios';
+import { runSharedScenarios, PROPERTY_LEVEL_CONFIG } from './shared-scenarios';
 import type { SceneObject, TestEnv } from '../../collaboration/types';
 
-runSharedScenarios('Variant B', () => createTestEnv('B'));
+// Variant B guarantees property-level independence: concurrent edits to
+// different properties MUST both survive. The shared scenarios assert this.
+runSharedScenarios('Variant B', () => createTestEnv('B'), PROPERTY_LEVEL_CONFIG);
 
 // ---------------------------------------------------------------------------
 // Variant B specific: property-level intent preservation guarantees
