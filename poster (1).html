@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Scene-aware Collaborative 3D Editor — Poster</title>
+<meta name="viewport" content="width=1240, initial-scale=1" />
+<style>
+  /* ─────────── Template metrics ───────────
+     A2 portrait → 420 × 594 mm.
+     Aspect 1:√2. Canvas 1240 × 1754 px @ screen.
+     All template element positions/heights match the .pptx layout. */
+
+  :root{
+    /* Template brand colors (sampled from template_image2 / image4) */
+    --tpl-red:    #E5462B;
+    --tpl-navy:   #1F2F5C;
+    --tpl-black:  #14181F;
+    --tpl-gray:   #E8E5DD;       /* the gray block behind authors */
+    --tpl-paper:  #FFFFFF;
+    --tpl-rule:   #14181F;
+    --tpl-soft:   #F4F1EA;
+
+    /* Accents for content area (used sparingly) */
+    --primary:    var(--tpl-navy);
+    --primary-soft: oklch(0.94 0.04 254);
+    --accent:     var(--tpl-red);
+    --accent-soft: oklch(0.95 0.04 30);
+
+    --ink:   #14181F;
+    --ink-2: #3a4150;
+    --muted: #6a7283;
+
+    /* Template-approved fonts */
+    --sans: Verdana, "Verdana Pro", "DejaVu Sans", "Bitstream Vera Sans", Geneva, Tahoma, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  html, body{ margin:0; padding:0; background:#1a1d23; font-family:var(--sans); color:var(--ink); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;}
+  .stage{ min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:24px 0; }
+  .canvas{
+    width: 1240px;
+    height: 1754px;
+    flex: 0 0 1240px;
+    min-width: 1240px;
+    background: var(--tpl-paper);
+    color: var(--ink);
+    position: relative;
+    transform-origin: top center;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45), 0 6px 18px rgba(0,0,0,0.3);
+    overflow:hidden;
+    font-family: var(--sans);
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+  @page { size: A2 portrait; margin: 0; }
+  @media print {
+    html, body{ background:#fff;}
+    .stage{ padding:0;}
+    .canvas{ transform:none !important; box-shadow:none; width: 420mm; height: 594mm;}
+    .twk-panel, .no-print { display:none !important; }
+  }
+
+  /* ────────────────────────────────────────────────────────
+     TEMPLATE — TOP (faithful)
+     ──────────────────────────────────────────────────────── */
+  .tpl-top-band{
+    position:absolute; left:0; right:0; top:0; height: 12px;
+    background: var(--tpl-red);
+  }
+  .tpl-header{
+    position:absolute; left: 48px; right: 48px; top: 22px;
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-family: var(--sans);
+  }
+  .tpl-header .h-title{
+    font-size: 30px; font-weight: 700; color: var(--tpl-black);
+    letter-spacing: -0.005em;
+  }
+  .tpl-header .h-year{
+    font-size: 22px; font-weight: 400; color: var(--tpl-black);
+    letter-spacing: 0;
+  }
+  .tpl-rule{
+    position:absolute; left: 24px; right: 24px;
+    height: 0; margin: 0; border: 0;
+    border-top: 2px solid var(--tpl-rule);
+  }
+  /* Template TOP — restructured: Title → Author → Programme */
+  .tpl-rule.r1{ top: 80px; }
+  .tpl-rule.r2{ top: 332px; }
+
+  .tpl-title-block{
+    position:absolute;
+    left: 48px; right: 48px;
+    top: 96px; bottom: auto;
+    display: flex; flex-direction: column;
+    gap: 14px;
+    align-items: stretch;
+  }
+  .tpl-title{
+    font-family: var(--sans);
+    font-size: 44px; font-weight: 700;
+    line-height: 1.05; letter-spacing: -0.02em;
+    color: var(--tpl-black);
+    margin: 0;
+    text-wrap: balance;
+  }
+  .tpl-author{
+    font-family: var(--sans);
+    font-size: 22px; font-weight: 400;
+    color: var(--tpl-black);
+    margin: 0;
+    line-height: 1.1;
+  }
+  .tpl-programme{
+    font-family: var(--sans);
+    font-size: 14px; font-weight: 400;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.1;
+  }
+
+  /* ────────────────────────────────────────────────────────
+     TEMPLATE — BOTTOM (faithful)
+     ──────────────────────────────────────────────────────── */
+  .tpl-bottom-band{
+    position:absolute; left:0; right:0; top: 1577px; height: 94px;
+    background: var(--tpl-gray);
+    padding: 16px 48px;
+    box-sizing: border-box;
+    display:flex; flex-direction:column; justify-content:center; gap: 6px;
+    font-family: var(--sans);
+  }
+  .tpl-row{ display:flex; align-items:baseline; gap: 14px; }
+  .tpl-label{
+    font-size: 16px; font-weight: 700; color: var(--tpl-black);
+    min-width: 250px;
+  }
+  .tpl-names{
+    font-size: 16px; font-weight: 400; color: var(--tpl-black);
+  }
+  .tpl-names .placeholder{ color: var(--muted); font-style: italic; }
+
+  .tpl-stripe{
+    position:absolute; left:0; right:0; top: 1671px; height: 18px;
+    background: linear-gradient(180deg,
+      var(--tpl-red) 0%, var(--tpl-red) 50%,
+      var(--tpl-navy) 50%, var(--tpl-navy) 100%);
+  }
+
+  .tpl-footer{
+    position:absolute; left:0; right:0; top: 1689px; height: 65px;
+    display: grid;
+    grid-template-columns: 1.1fr 1.4fr auto;
+    gap: 24px; align-items: center;
+    padding: 0 48px;
+    box-sizing: border-box;
+  }
+  .tpl-footer .f-left{
+    font-family: var(--sans);
+    font-size: 12px; color: var(--muted);
+    border: 1.5px dashed var(--rule, #cdc6b6);
+    padding: 8px 12px; border-radius: 3px; line-height: 1.3;
+    /* placeholder per template: "place here logo company or guest institution" */
+  }
+  .tpl-footer .f-text{
+    font-family: var(--sans);
+    font-size: 13px; line-height: 1.35; color: var(--tpl-black);
+  }
+  .tpl-footer .f-logos{
+    display:flex; gap: 14px; align-items:center;
+  }
+  .tpl-footer .f-logos img{ height: 44px; width: auto; display:block; }
+  .tpl-footer .f-logos img.kul{ height: 40px; }
+
+  /* ────────────────────────────────────────────────────────
+     CONTENT AREA — 338px to 1577px (1239px tall)
+     ──────────────────────────────────────────────────────── */
+  .content{
+    position:absolute;
+    left: 0; right: 0;
+    top: 342px; height: 1232px;
+    padding: 0 48px;
+    box-sizing: border-box;
+    display: flex; flex-direction: column;
+    gap: 6px;
+  }
+
+  /* Red banner section headers (matches template examples) */
+  .sec-banner{
+    display: flex; align-items: stretch;
+    margin: 0 0 8px;
+    height: 30px;
+  }
+  .sec-banner .sec-num{
+    background: var(--tpl-red);
+    color: var(--tpl-paper);
+    font-family: var(--sans);
+    font-size: 16px; font-weight: 700;
+    width: 30px; height: 30px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius: 50%;
+    flex: 0 0 30px;
+    letter-spacing: 0;
+    text-transform: none;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 0 0 2px var(--tpl-paper);
+  }
+  .sec-banner .sec-title{
+    background: var(--tpl-red);
+    color: var(--tpl-paper);
+    font-family: var(--sans);
+    font-size: 17px; font-weight: 700;
+    margin: 0;
+    padding: 0 14px 0 18px;
+    display:flex; align-items:center;
+    flex: 1;
+    margin-left: -15px;
+    letter-spacing: 0.005em;
+  }
+
+  /* Inline figure inside Methods */
+  .m-fig{ margin-bottom: 2px; }
+  .m-fig img{ aspect-ratio: 16/8; object-position: center 18%; }
+
+  p{
+    margin: 0 0 5px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--ink);
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+  }
+  p b{ font-weight: 700; color: var(--tpl-black); }
+
+  /* Hero row */
+  .hero{
+    display:grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 16px;
+    align-items: stretch;
+  }
+  .abstract{
+    background: var(--tpl-soft);
+    border-left: 4px solid var(--tpl-red);
+    padding: 8px 12px;
+    display:flex; flex-direction:column; gap: 4px;
+  }
+  .abstract .ab-label{
+    font-family: var(--sans);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--tpl-red);
+  }
+  .abstract p{ margin: 0; font-size: 12px; line-height: 1.4; text-align: justify; hyphens: auto; }
+
+  .key-stats{
+    display:grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+    margin-top: 4px;
+  }
+  .stat{
+    background: var(--tpl-paper);
+    border: 1.5px solid var(--tpl-rule);
+    padding: 5px 8px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    min-height: 56px;
+  }
+  .stat.accent{ border-color: var(--tpl-red); background: oklch(0.97 0.04 30 / 0.6); }
+  .stat-num{
+    font-family: var(--sans);
+    font-size: 22px; font-weight: 700; line-height: 1;
+    color: var(--tpl-navy); letter-spacing: -0.02em;
+  }
+  .stat.accent .stat-num{ color: var(--tpl-red); }
+  .stat-num span{ font-size: 15px; font-weight: 500;}
+  .stat-label{
+    font-family: var(--sans);
+    font-size: 9.5px; font-weight: 700;
+    color: var(--tpl-black); line-height: 1.3;
+    margin-top: 3px;
+  }
+
+  .hero-fig{ display:flex; flex-direction:column; }
+  .figure{
+    border: 1px solid #cdc6b6;
+    background: var(--tpl-paper);
+    overflow:hidden;
+  }
+  .figure img{ display:block; width:100%; height:auto; aspect-ratio: 24/9; object-fit: cover; object-position: center 18%; }
+  .fig-cap{
+    font-family: var(--sans);
+    font-size: 10.5px; line-height: 1.35;
+    color: var(--tpl-black);
+    margin-top: 3px;
+    text-align: justify;
+  }
+  .fig-cap b{ font-weight: 700; }
+
+  /* Two-col body */
+  .two-col{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 24px;
+    align-items: start;
+  }
+
+  /* Research questions */
+  .rq-block{ margin-top: 6px; }
+  .rq-title{
+    font-family: var(--sans);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--tpl-black); margin: 0 0 4px;
+  }
+  ol.rq{ margin: 0; padding: 0; counter-reset: rq; list-style: none; }
+  ol.rq li{
+    counter-increment: rq;
+    font-size: 11px; line-height: 1.35;
+    margin-bottom: 2px;
+    padding-left: 28px;
+    text-indent: -28px;
+    text-align: justify;
+  }
+  ol.rq li::before{
+    content: "RQ" counter(rq) "\00a0\00a0";
+    font-family: var(--sans);
+    font-size: 10px; font-weight: 700; color: var(--tpl-red);
+    display: inline-block;
+    width: 28px;
+    text-indent: 0;
+  }
+
+  /* Variant cards */
+  .variants{
+    display:grid; grid-template-columns: 1fr 1fr; gap: 6px;
+    margin: 4px 0 6px;
+  }
+  .variant{
+    border: 1.5px solid var(--tpl-rule);
+    background: var(--tpl-paper);
+    padding: 6px 9px;
+  }
+  .variant .v-head{
+    display:flex; align-items:center; gap: 6px;
+    margin-bottom: 3px;
+  }
+  .variant .v-letter{
+    font-family: var(--sans); font-weight: 700; font-size: 12px;
+    color: var(--tpl-paper); background: var(--tpl-navy);
+    width: 20px; height: 20px; line-height: 20px; text-align:center;
+    flex: 0 0 auto;
+  }
+  .variant.c .v-letter{ background: var(--tpl-red); }
+  .variant .v-name{ font-size: 11.5px; font-weight: 700; line-height: 1.15; color: var(--tpl-black);}
+  .variant .v-desc{ font-size: 10.5px; line-height: 1.35; color: var(--ink); margin: 2px 0; text-align: justify; hyphens: auto;}
+  .variant .v-tag{ font-family: var(--sans); font-size: 9px; letter-spacing: 0.03em; color: var(--muted); text-transform: uppercase; font-weight: 600;}
+
+  /* Result matrix */
+  .matrix{
+    width:100%;
+    border-collapse: collapse;
+    font-size: 10.5px;
+    background: var(--tpl-paper);
+    border: 1.5px solid var(--tpl-rule);
+  }
+  .matrix th, .matrix td{
+    padding: 3px 6px;
+    text-align:center;
+    border-right: 1px solid #cdc6b6;
+    border-bottom: 1px solid #cdc6b6;
+    vertical-align: middle;
+  }
+  .matrix tr:last-child td{ border-bottom:0;}
+  .matrix th:last-child, .matrix td:last-child{ border-right:0;}
+  .matrix thead th{
+    background: var(--tpl-navy);
+    color: var(--tpl-paper);
+    font-family: var(--sans);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .matrix tbody th{
+    text-align:left;
+    font-weight: 700;
+    font-size: 10.5px;
+    color: var(--tpl-black);
+    background: var(--tpl-soft);
+    padding-left: 8px;
+  }
+  .matrix .scen-id{ color: var(--muted); font-weight: 400; font-size: 9.5px; margin-left: 4px;}
+  .pill{
+    display:inline-block; padding: 1px 6px;
+    font-family: var(--sans); font-size: 10px; font-weight: 700;
+  }
+  .pill.ok{ background: #d3eccb; color: #2e6b1a; }
+  .pill.bad{ background: #f4d4cc; color: #9a2d12; }
+  .pill.warn{ background: #f6e6c0; color: #8c5c10; }
+  .pill.lww{ background: #e1ddcf; color: var(--tpl-black); }
+
+  /* Delta diagram */
+  .delta-row{
+    display:grid; grid-template-columns: 56px 1fr; gap: 8px;
+    font-size: 10.5px; align-items:center;
+    padding: 3px 6px;
+  }
+  .delta-row + .delta-row{ margin-top: 2px; }
+  .delta-row.win{ background: oklch(0.94 0.07 150 / 0.5); }
+  .delta-row.lose{ background: oklch(0.95 0.05 28 / 0.4); }
+  .delta-row .lab{ font-family: var(--sans); font-weight: 700; color: var(--tpl-black); }
+  .bar{
+    height: 12px;
+    background: linear-gradient(90deg, var(--tpl-navy) var(--w,30%), #e1ddcf 0);
+    position:relative;
+  }
+  .delta-row.win .bar{ background: linear-gradient(90deg, var(--tpl-red) var(--w,100%), #e1ddcf 0);}
+  .bar::after{
+    content: attr(data-label);
+    position:absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    font-family: var(--sans); font-size: 10.5px; font-weight: 700; color: var(--tpl-paper);
+    text-shadow: 0 0 2px rgba(0,0,0,0.4);
+  }
+
+  /* Conclusion */
+  .conclusion{
+    background: var(--tpl-soft);
+    border-left: 4px solid var(--tpl-navy);
+    padding: 8px 12px;
+  }
+  .conclusion .takeaways{
+    display:grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    margin-top: 0;
+  }
+  .takeaway{
+    border-top: 3px solid var(--tpl-navy);
+    padding-top: 4px;
+  }
+  .takeaway.accent{ border-top-color: var(--tpl-red); }
+  .takeaway .tk-tag{
+    font-family: var(--sans); font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .takeaway .tk-title{
+    font-size: 11.5px; font-weight: 700; line-height: 1.15;
+    margin-bottom: 2px; color: var(--tpl-black);
+  }
+  .takeaway .tk-text{ font-size: 10px; line-height: 1.35; color: var(--ink); text-align: justify; hyphens: auto;}
+
+  /* References */
+  .refs-block{
+    margin-top: 0;
+    border-top: 1px solid #cdc6b6;
+    padding-top: 3px;
+  }
+  .refs-block .rh{
+    font-family: var(--sans); font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
+  }
+  .refs{
+    font-family: var(--sans);
+    font-size: 8px; line-height: 1.25; color: var(--ink-2);
+    column-count: 3; column-gap: 16px;
+  }
+  .refs ol{ margin: 0; padding-left: 16px; }
+  .refs li{ margin-bottom: 2px; break-inside: avoid; }
+
+  /* Misc */
+  .mono{ font-family: var(--mono); font-size: 11px; }
+  .muted{ color: var(--muted); }
+
+  /* Theme overrides via canvas data-theme */
+  .canvas[data-theme="blue"]    { --primary: var(--tpl-navy); --accent: var(--tpl-red);}
+  .canvas[data-theme="neutral"] { --primary: #475569; --accent: #94734c;}
+  .canvas[data-theme="forest"]  { --primary: #2d5d3f; --accent: var(--tpl-red);}
+  .canvas[data-theme="violet"]  { --primary: #4c3a8a; --accent: var(--tpl-red);}
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <article class="canvas" id="poster" data-theme="blue" data-screen-label="01 Poster">
+
+    <!-- ───────────────── TEMPLATE TOP (unchanged) ───────────────── -->
+    <div class="tpl-top-band"></div>
+
+    <div class="tpl-header">
+      <span class="h-title">Bachelor's Thesis Engineering Technology</span>
+      <span class="h-year">2025 — 2026</span>
+    </div>
+
+    <hr class="tpl-rule r1" />
+
+    <div class="tpl-title-block">
+      <h1 class="tpl-title">Scene-aware Collaborative 3D Editor</h1>
+      <div class="tpl-author">Florian Salaets</div>
+      <div class="tpl-programme">Software Systems Engineering Technology</div>
+    </div>
+
+    <hr class="tpl-rule r2" />
+
+    <!-- ───────────────── CONTENT AREA ───────────────── -->
+    <main class="content">
+
+      <!-- 01 Introduction + 02 Materials & Methods -->
+      <section class="two-col">
+
+        <div>
+          <div class="sec-banner">
+            <span class="sec-num">1</span>
+            <h2 class="sec-title">Introduction</h2>
+          </div>
+          <p>
+            Game engines such as <b>Unity</b> and <b>Unreal</b> serialise scenes into large text or binary files; version control surfaces these as <b>unresolvable merge conflicts</b>. Text and 2D editors solved this with real-time sync built on <b>Operational Transformation</b> (Ellis &amp; Gibbs, 1989) or <b>Conflict-free Replicated Data Types</b> (Shapiro et al., 2011). Both guarantee strong eventual consistency; they differ in how much of each user's <b>intent</b> survives (Sun &amp; Ellis, 1998).
+          </p>
+          <p>
+            A 3D scene is a hierarchical <b>scenegraph</b>: setting an absolute position is not commutative, but a relative movement delta is (Preguiça et al., 2018; Zhou et al., 2023). The <b>granularity</b> at which conflicts are detected determines how much intent survives. No prior work compares strategies across the full range of scenegraph conflict types in a single, controlled environment — this research closes that gap.
+          </p>
+
+          <div class="rq-block">
+            <div class="rq-title">Research questions</div>
+            <ol class="rq">
+              <li>Do all four strategies guarantee <b>strong eventual consistency</b>?</li>
+              <li>For which conflict types does each strategy preserve both collaborators' intended changes, and where does <b>intent loss</b> occur?</li>
+              <li>Does <b>property-level</b> conflict detection (Variant B) eliminate the loss seen under object-level LWW (Variant A)?</li>
+              <li>Does representing movement as <b>commutative deltas</b> (Variant C) reliably preserve the accumulated effect of concurrent movement operations?</li>
+              <li>What are the practical differences between the <b>OT</b> approach (Variant D) and the <b>CRDT</b>-based approaches (A–C) in a 3D scenegraph context?</li>
+              <li>Are these approaches a realistic way of working in the intended context — the <b>game industry</b> — and a viable or better alternative to existing file-based workflows?</li>
+            </ol>
+          </div>
+        </div>
+
+        <div>
+          <div class="sec-banner">
+            <span class="sec-num">2</span>
+            <h2 class="sec-title">Materials &amp; Methods</h2>
+          </div>
+
+          <div class="figure m-fig">
+            <img src="assets/editor-screenshot.png" alt="The collaborative 3D editor interface." />
+          </div>
+          <div class="fig-cap">
+            <b>Figure 1.</b> The browser-based collaborative 3D editor (React 19 + Three.js r182). Two clients ("AL", "BO") share the same scene in real-time.
+          </div>
+
+          <p style="margin-top: 6px;">
+            All four variants implement the same <b>Collaboration-Strategy</b> interface in TypeScript 5.9 (addObject, updateObject, moveObject, removeObject, linkObject, unlinkObject, subscribe). The application layer is variant-agnostic — the same test suite runs against every implementation.
+          </p>
+
+          <div class="variants">
+            <div class="variant">
+              <div class="v-head"><span class="v-letter">A</span><span class="v-name">Object-level LWW</span></div>
+              <div class="v-desc">Single Y.Map&lt;SceneObject&gt;. Each write replaces the whole object — concurrent edits on different properties still collide.</div>
+            </div>
+            <div class="variant">
+              <div class="v-head"><span class="v-letter">B</span><span class="v-name">Property-level LWW</span></div>
+              <div class="v-desc">Nested Y.Map&lt;Y.Map&gt;. Each scalar (position_x, color…) has its own key — only same-attribute edits collide.</div>
+            </div>
+            <div class="variant c">
+              <div class="v-head"><span class="v-letter">C</span><span class="v-name">Operation log + deltas</span></div>
+              <div class="v-desc">Append-only Y.Array&lt;Op&gt;. Movement stored as commutative deltas rather than absolute values.</div>
+            </div>
+            <div class="variant">
+              <div class="v-head"><span class="v-letter">D</span><span class="v-name">Operational Transformation</span></div>
+              <div class="v-desc">Authoritative in-memory server. Each op carries a clientRevision; server transforms ops against unseen log entries.</div>
+            </div>
+          </div>
+
+          <p style="margin-top: 4px;">
+            Fifteen scenarios were implemented in <b>Vitest 4.0</b>. Two simulated clients (<b>Alice</b>, <b>Bob</b>) share a scene; <b>disableSync()</b> pauses replication while both act independently, then <b>enableSync()</b> reconnects them. Two metrics are recorded: <b>(M1) Convergence</b> — all clients reach an identical state — and <b>(M2) Intent preservation</b> — how many intended property changes survive.
+          </p>
+        </div>
+
+      </section>
+
+      <!-- 03 Results & Discussion -->
+      <section>
+        <div class="sec-banner">
+          <span class="sec-num">3</span>
+          <h2 class="sec-title">Results &amp; Discussion</h2>
+        </div>
+
+        <div class="two-col" style="column-gap: 20px;">
+
+          <!-- LEFT — matrix -->
+          <div>
+            <p style="margin-bottom: 6px;">
+              All four variants pass <b>convergence</b> on every scenario, satisfying strong eventual consistency (Shapiro et al., 2011). Convergence is necessary but not sufficient — two systems can converge to the same wrong outcome. <b>Figure 2</b> shows how intent preservation differs.
+            </p>
+
+            <table class="matrix" aria-label="Result matrix">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding-left:10px;">Conflict scenario</th>
+                  <th>A</th>
+                  <th>B</th>
+                  <th>C</th>
+                  <th>D</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>Same-property edit <span class="scen-id">S1, S12</span></th>
+                  <td><span class="pill lww">LWW</span></td>
+                  <td><span class="pill lww">LWW</span></td>
+                  <td><span class="pill lww">LWW</span></td>
+                  <td><span class="pill lww">1st wins</span></td>
+                </tr>
+                <tr>
+                  <th>Different property, same object <span class="scen-id">S2, S8</span></th>
+                  <td><span class="pill bad">1 lost</span></td>
+                  <td><span class="pill ok">both</span></td>
+                  <td><span class="pill ok">both</span></td>
+                  <td><span class="pill ok">both</span></td>
+                </tr>
+                <tr>
+                  <th>Four disjoint properties <span class="scen-id">S14</span></th>
+                  <td><span class="pill bad">2 lost</span></td>
+                  <td><span class="pill ok">all 4</span></td>
+                  <td><span class="pill ok">all 4</span></td>
+                  <td><span class="pill ok">all 4</span></td>
+                </tr>
+                <tr>
+                  <th>Repeated movement deltas <span class="scen-id">S4, S15</span></th>
+                  <td><span class="pill bad">1 lost</span></td>
+                  <td><span class="pill bad">1 lost</span></td>
+                  <td><span class="pill ok">accumulate</span></td>
+                  <td><span class="pill bad">1 lost</span></td>
+                </tr>
+                <tr>
+                  <th>Edit on deleted object <span class="scen-id">S3, S9</span></th>
+                  <td><span class="pill warn">no-op</span></td>
+                  <td><span class="pill warn">no-op</span></td>
+                  <td><span class="pill warn">no-op</span></td>
+                  <td><span class="pill warn">no-op</span></td>
+                </tr>
+                <tr>
+                  <th>Concurrent reparent <span class="scen-id">S5, S10</span></th>
+                  <td><span class="pill lww">LWW</span></td>
+                  <td><span class="pill lww">LWW</span></td>
+                  <td><span class="pill lww">LWW</span></td>
+                  <td><span class="pill lww">LWW</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="fig-cap">
+              <b>Figure 2.</b> Outcome of each strategy per conflict family across 15 scenarios. Variant D enforces rules explicitly in its transform() function; Variants A–C inherit semantics from Y.js.
+            </div>
+
+            <p style="margin-top: 5px;">
+              The largest difference appears in <b>different-property conflicts</b> (S2, S8, S14). Variant A treats the whole object as one merge unit, so an Alice-moves-while-Bob-recolors edit collapses to one full-object write — half the intent is gone. Variants B, C and D resolve at property granularity and preserve both edits.
+            </p>
+          </div>
+
+          <!-- RIGHT — delta commutativity -->
+          <div>
+            <p style="margin: 0 0 6px;">
+              <b>Delta commutativity (S15).</b> Alice moves an object +1·X three times while offline; Bob moves it +1·X twice. Ideal: <b>+5</b>. Variants A, B and D submit absolute positions — one final write overwrites the other. Variant C appends each move as a delta to the shared log; addition is commutative, so order does not matter (<b>Figure 3</b>).
+            </p>
+
+            <div class="delta-row lose"><span class="lab">A · LWW</span><div class="bar" style="--w:60%" data-label="+3 or +2"></div></div>
+            <div class="delta-row lose"><span class="lab">B · LWW</span><div class="bar" style="--w:60%" data-label="+3 or +2"></div></div>
+            <div class="delta-row win"><span class="lab">C · Δ-log</span><div class="bar" style="--w:100%" data-label="+5"></div></div>
+            <div class="delta-row lose"><span class="lab">D · OT</span><div class="bar" style="--w:60%" data-label="+3 or +2"></div></div>
+
+            <div class="fig-cap">
+              <b>Figure 3.</b> Final X-displacement after merging Alice's 3×(+1) and Bob's 2×(+1) moves. Only Variant C preserves the full accumulated +5.
+            </div>
+
+            <p style="margin-top: 5px;">
+              <b>Granularity ladder.</b> Bigger merge units cause more collateral loss. The <i>contention zone</i> shrinks from whole file → whole object (A) → single property (B, D) → nothing for commutative ops (C).
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 04 Conclusion -->
+      <section>
+        <div class="sec-banner">
+          <span class="sec-num">4</span>
+          <h2 class="sec-title">Conclusion</h2>
+        </div>
+
+        <div class="conclusion">
+          <div class="takeaways">
+            <div class="takeaway">
+              <div class="tk-tag">RQ1 · Convergence</div>
+              <div class="tk-title">All four converge</div>
+              <div class="tk-text">Every variant satisfies SEC across 15 scenarios. A–C inherit it from Y.js; D from server broadcast.</div>
+            </div>
+            <div class="takeaway">
+              <div class="tk-tag">RQ2 / RQ3 · Granularity</div>
+              <div class="tk-title">Property &gt; object</div>
+              <div class="tk-text">B, C and D preserve all changes when properties don't overlap (S2, S8, S14). A loses one client's edit on every collision.</div>
+            </div>
+            <div class="takeaway accent">
+              <div class="tk-tag">RQ4 · Deltas</div>
+              <div class="tk-title">Only C accumulates moves</div>
+              <div class="tk-text">Commutative delta operations carry zero risk of loss for repeated movements. A, B and D all degrade to LWW.</div>
+            </div>
+            <div class="takeaway">
+              <div class="tk-tag">RQ5 · OT vs CRDT</div>
+              <div class="tk-title">D = inspectable rules</div>
+              <div class="tk-text">D matches B for most scenarios, with the policy explicit in transform() rather than implicit in the data structure.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- References -->
+      <section class="refs-block">
+        <div class="rh">References</div>
+        <div class="refs">
+          <ol>
+            <li>Ellis, C. A., &amp; Gibbs, S. J. (1989). Concurrency Control in Groupware Systems. <i>ACM SIGMOD Record</i>, 18(2), 399–407.</li>
+            <li>Sun, C., &amp; Ellis, C. A. (1998). Operational transformation in real-time group editors. <i>Proc. ACM CSCW 1998</i>.</li>
+            <li>Shapiro, M., Preguiça, N., Baquero, C., &amp; Zawirski, M. (2011). Conflict-free Replicated Data Types. <i>INRIA Research Report 7686</i>.</li>
+            <li>Preguiça, N., Baquero, C., &amp; Almeida, P. S. (2018). Conflict-free Replicated Data Types: An Overview. <i>arXiv:1806.10254</i>.</li>
+            <li>Zhou, S., Li, Y., Shang, T., &amp; Kong, W. (2023). A paradigm for collaborative 3D editing via list CRDTs. <i>Proc. CSAE 2023</i>, ACM.</li>
+            <li>Sun, C., Xia, S., Sun, D., Chen, D., Shen, H., &amp; Cai, W. (2012). Transparent adaptation of single-user applications for multi-user real-time collaboration. <i>ACM TOCHI</i>.</li>
+          </ol>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ───────────────── TEMPLATE BOTTOM (unchanged) ───────────────── -->
+    <div class="tpl-bottom-band">
+      <div class="tpl-row">
+        <span class="tpl-label">Supervisors / Co-supervisors / Advisors:</span>
+        <span class="tpl-names">Jeroen Put</span>
+      </div>
+    </div>
+
+    <div class="tpl-stripe"></div>
+
+    <div class="tpl-footer">
+      <div class="f-left">
+        Place here logo company or guest institution
+      </div>
+      <div class="f-text">
+        De opleiding industrieel ingenieur is een gezamenlijke opleiding van UHasselt en KU Leuven.
+      </div>
+      <div class="f-logos">
+        <img src="assets/uhasselt.png" alt="UHasselt" />
+        <img class="kul" src="assets/kuleuven.png" alt="KU Leuven" />
+      </div>
+    </div>
+
+  </article>
+</div>
+
+<!-- Scale to viewport (screen only) -->
+<script>
+(function(){
+  const stage  = document.getElementById('stage');
+  const poster = document.getElementById('poster');
+  const W = 1240, H = 1754;
+  function fit(){
+    if (window.matchMedia('print').matches) { poster.style.transform = ''; return; }
+    const availW = window.innerWidth - 48;
+    const availH = window.innerHeight - 48;
+    const s = Math.min(availW / W, availH / H, 1);
+    poster.style.transform = `scale(${s})`;
+    stage.style.height = (H * s + 48) + 'px';
+  }
+  fit();
+  window.addEventListener('resize', fit);
+})();
+</script>
+
+<!-- ─────────── TWEAKS ─────────── -->
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" data-presets="env,react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "blue",
+  "supervisorName": "Jeroen Put",
+  "authorName": "Florian Salaets"
+}/*EDITMODE-END*/;
+
+function TweaksApp(){
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  React.useEffect(() => {
+    const poster = document.getElementById('poster');
+    if (!poster) return;
+    poster.setAttribute('data-theme', t.theme);
+
+    const author = poster.querySelector('.tpl-author');
+    if (author) author.textContent = t.authorName || 'Florian Salaets';
+
+    const supName = poster.querySelector('.tpl-bottom-band .tpl-names');
+    if (supName) {
+      const trimmed = (t.supervisorName || '').trim();
+      supName.innerHTML = trimmed
+        ? trimmed
+        : '<span class="placeholder">[Supervisor name to be added]</span>';
+    }
+  }, [t]);
+
+  return (
+    <TweaksPanel title="Tweaks">
+      <TweakSection label="Author / Supervisor" />
+      <TweakText
+        label="Author name"
+        value={t.authorName}
+        placeholder="Florian Salaets"
+        onChange={(v) => setTweak('authorName', v)}
+      />
+      <TweakText
+        label="Supervisor name"
+        value={t.supervisorName}
+        placeholder="e.g. Prof. dr. ir. X"
+        onChange={(v) => setTweak('supervisorName', v)}
+      />
+    </TweaksPanel>
+  );
+}
+
+const mount = document.createElement('div');
+mount.className = 'no-print';
+document.body.appendChild(mount);
+ReactDOM.createRoot(mount).render(<TweaksApp/>);
+</script>
+
+</body>
+</html>
