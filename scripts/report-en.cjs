@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Variant Test Report Generator
+ * Variant Test Report Generator — English version
  *
  * Runs all variant tests, parses the structured output, and writes
- * a self-contained HTML report to test-report.html.
+ * a self-contained HTML report to test-report-en.html.
  *
- * Usage:  node scripts/report.cjs
- *         npm run report
+ * Usage:  node scripts/report-en.cjs
+ *         npm run report:en
  */
 'use strict';
 
@@ -72,20 +72,13 @@ const results = allResults.filter(r => {
 // 3. Parse [DETAIL] JSON lines
 // ---------------------------------------------------------------------------
 
-/**
- * Lines emitted by reportDetailed() look like:
- *   [DETAIL] {"variant":"Variant B","scenario":"S2-pos+color", ...}
- *
- * We normalise "Variant X" → "X" so we can join with the verdict results.
- */
-const detailMap = {}; // key: "A:S2-pos+color"
+const detailMap = {};
 
 for (const line of clean.split('\n')) {
   const idx = line.indexOf('[DETAIL] ');
   if (idx === -1) continue;
   try {
     const obj = JSON.parse(line.slice(idx + 9));
-    // normalise variant field
     const varLetter = (obj.variant ?? '').replace(/^Variant\s+/, '').trim();
     const key = `${varLetter}:${obj.scenario}`;
     if (!detailMap[key]) detailMap[key] = obj;
@@ -106,123 +99,121 @@ const VARIANT_LABELS = {
 };
 
 const VARIANT_DESC = {
-  A: 'Het hele object wordt vervangen bij elke update. Concurrent edits op verschillende properties verliezen altijd één update.',
-  B: 'Elke property heeft zijn eigen CRDT-slot. Concurrent edits op verschillende properties bewaren altijd beide intents.',
-  C: "moveObject-deltas worden als commutative ops in een Y.Array opgeslagen (+5 en +3 geeft altijd 8). updateObject volgt property-level LWW.",
-  D: 'Een centrale server transformeert concurrent operaties. "Eerst bij server" wint bij conflicten. Volledig auditeerbaar.',
+  A: 'The entire object is replaced on every update. Concurrent edits to different properties always result in one full update being discarded.',
+  B: 'Each property has its own CRDT slot. Concurrent edits to different properties always preserve both intents.',
+  C: 'moveObject deltas are stored as commutative ops in a Y.Array (+5 and +3 always gives 8). updateObject follows property-level LWW.',
+  D: 'A central server transforms concurrent operations. "First to server wins" on conflicts. Fully auditable.',
 };
 
 const SCENARIO_LABELS = {
-  'S1-position':              'S1 — Zelfde property (positie)',
-  'S1-color':                 'S1 — Zelfde property (kleur)',
-  'S2-pos+color':             'S2 — Andere properties (positie + kleur)',
-  'S2-rot+scale':             'S2 — Andere properties (rotatie + schaal)',
-  'S3-del+move':              'S3 — Delete vs. verplaats',
-  'S3-del+color':             'S3 — Delete vs. kleurwijziging',
-  'S4-concurrent-move':       'S4 — Gelijktijdig moveObject (delta)',
-  'S4-batch-move':            'S4 — 3 moves + 1 kleur (batch)',
+  'S1-position':              'S1 — Same property (position)',
+  'S1-color':                 'S1 — Same property (color)',
+  'S2-pos+color':             'S2 — Different properties (position + color)',
+  'S2-rot+scale':             'S2 — Different properties (rotation + scale)',
+  'S3-del+move':              'S3 — Delete vs. move',
+  'S3-del+color':             'S3 — Delete vs. color change',
+  'S4-concurrent-move':       'S4 — Concurrent moveObject (delta)',
+  'S4-batch-move':            'S4 — 3 moves + 1 color (batch)',
   'S5-reparent':              'S5 — Concurrent reparenting (parentId)',
   'S5-childIds':              'S5 — Concurrent reparenting (childIds)',
-  'S6-concurrent-create':     'S6 — Zelfde ID aanmaken',
-  'S6-object-count':          'S6 — Objecttelling na concurrent create',
-  'S7-del-parent+edit-child': 'S7 — Ouder verwijderd, kind bewerkt',
-  'S7-orphan-on-create':      'S7 — Kind aangemaakt met verdwenen ouder',
+  'S6-concurrent-create':     'S6 — Same ID creation',
+  'S6-object-count':          'S6 — Object count after concurrent create',
+  'S7-del-parent+edit-child': 'S7 — Parent deleted while child edited',
+  'S7-orphan-on-create':      'S7 — Child created with missing parent',
   'S8-batch3+single':         'S8 — 3 batch ops vs. 1 op',
-  'S8-chain-same-prop':       'S8 — Ketting van zelfde property',
-  'S9-double-delete':         'S9 — Dubbele delete (idempotentie)',
-  'S9-untouched-neighbour':   'S9 — Naburig object onaangetast',
-  'S10-concurrent-link':      'S10 — Gelijktijdig linkObject',
-  'S10-link-vs-unlink':       'S10 — Link vs. unlink gelijktijdig',
+  'S8-chain-same-prop':       'S8 — Chain of same-property writes',
+  'S9-double-delete':         'S9 — Double delete (idempotency)',
+  'S9-untouched-neighbour':   'S9 — Adjacent object untouched',
+  'S10-concurrent-link':      'S10 — Concurrent linkObject',
+  'S10-link-vs-unlink':       'S10 — Link vs. unlink concurrently',
   'S11-stress':               'S11 — Multi-property stress',
-  'S12-undo-vs-move':         'S12 — Undo vs. verdere verplaatsing',
-  'S13-sequential-chain':     'S13 — Sequentiële keten + concurrent',
-  'S14-clean-split':          'S14 ★ — Schone split: 4 properties, 0 overlap (A vs B/C/D)',
-  'S15-nudge-accumulation':   'S15 ★ — Nudge-accumulatie: delta vs. LWW (A/B/D vs C)',
+  'S12-undo-vs-move':         'S12 — Undo vs. continued move',
+  'S13-sequential-chain':     'S13 — Sequential chain + concurrent',
+  'S14-clean-split':          'S14 ★ — Clean 4-property split, 0 overlap (A vs B/C/D)',
+  'S15-nudge-accumulation':   'S15 ★ — Nudge accumulation: delta vs. LWW (A/B/D vs C)',
 };
 
-/** What each test does — shown as the scenario description in the HTML */
 const SCENARIO_DESCRIPTIONS = {
-  'S1-position': 'Alice en Bob passen tegelijkertijd de <em>positie</em> van hetzelfde object aan. Dit is een directe botsing op dezelfde property — slechts één waarde kan winnen. De test meet convergentie en welke waarde overblijft.',
-  'S1-color':    'Alice en Bob passen tegelijkertijd de <em>kleur</em> van hetzelfde object aan. Net als S1-positie is dit een directe botsing. De winnaar wordt bepaald door LWW (Last Write Wins) op timestamp- of revisieniveau.',
-  'S2-pos+color':  'Alice verplaatst het object (positie), Bob verandert de kleur. Dit zijn <em>verschillende properties</em> — er is geen logische botsing. De kernvraag: bewaart het algoritme <em>beide</em> wijzigingen, of overschrijft de ene de andere?',
-  'S2-rot+scale':  'Alice wijzigt de rotatie, Bob de schaal. Opnieuw onafhankelijke properties. Zoals S2-pos+color maar met andere property-paren om te bevestigen dat het gedrag generiek is.',
-  'S3-del+move':   'Alice verwijdert het object, Bob verplaatst het tegelijkertijd. Welk intent wint: het verwijderen of de verplaatsing? En zijn beide peers daarna in dezelfde toestand?',
-  'S3-del+color':  'Alice verwijdert het object, Bob wijzigt de kleur. Variant op S3-del+move om te testen of delete altijd wint, of soms het object overleeft met de nieuwe kleur.',
-  'S4-concurrent-move':  'Alice en Bob roepen gelijktijdig <code>moveObject(+5)</code> resp. <code>moveObject(+3)</code> aan. Ideale uitkomst: positie = 8 (beide deltas toegepast). Variant C is ontworpen om dit te garanderen via commutatieve delta-operaties.',
-  'S4-batch-move':       'Alice doet 3 opeenvolgende <code>moveObject(+1)</code> calls offline, Bob wijzigt de kleur. Test of meerdere sequentiële delta-operaties van één peer bewaard blijven naast een onafhankelijke update van de andere peer.',
-  'S5-reparent':   'Alice en Bob koppelen hetzelfde kind-object elk aan een andere ouder (<em>parent-A</em> vs. <em>parent-B</em>). Slechts één parent kan winnen. De test verifica: convergeert de <code>parentId</code> naar één waarde op beide peers?',
-  'S5-childIds':   'Uitbreiding van S5: naast de <code>parentId</code> op het kind, bijwerken ook de <code>childIds</code>-array op de respectievelijke ouders. Na sync: is er cross-object consistentie? D.w.z. bevat alleen de winnende ouder het kind in zijn <code>childIds</code>?',
-  'S6-concurrent-create':  'Alice en Bob maken beiden een object aan met <em>hetzelfde ID</em> maar een andere kleur. Convergeert het systeem naar één object? En welke kleur wint?',
-  'S6-object-count':       'Na concurrent create van een gedeeld ID plus eigen unieke objecten: telt het systeem hetzelfde aantal objecten op beide peers? Test objecttelling-consistentie.',
-  'S7-del-parent+edit-child': 'Een kind-object heeft <code>parentId=parent</code>. Alice verwijdert de ouder, Bob past het kind aan. Na sync: zijn beide peers consistent over de staat van het kind — en staat het kind eventueel als wees?',
-  'S7-orphan-on-create':   'Alice verwijdert een ouder-object, Bob maakt tegelijkertijd een kind aan met die ouder als parent. Na sync: is het kind aanwezig? Zo ja, is <code>parentId</code> een verwijzing naar een niet-bestaand object (wees)?',
-  'S8-batch3+single':      'Alice doet 3 offline updates aan <em>verschillende</em> properties (positie, rotatie, schaal), Bob doet 1 update aan de kleur. Worden alle 4 updates bewaard? Dit test of de variant ook met meerdere eigenschappen tegelijk correct omgaat.',
-  'S8-chain-same-prop':    'Alice past de kleur 3× opeenvolgend aan (offline), Bob past de kleur 1× aan. Na sync: welke kleur wint? De test verwacht de "laatste" kleur van Alice (#333333) of de van Bob (#0000FF) — maar niet een tussenliggende waarde.',
-  'S9-double-delete':      'Beide peers verwijderen hetzelfde object tegelijkertijd. Convergeert het systeem naar "verwijderd"? Dit test idempotentie: een dubbele delete mag geen fout of inconsistentie veroorzaken.',
-  'S9-untouched-neighbour':'Na de dubbele delete van <em>box-1</em>: staat <em>box-2</em> (een niet-aangeraakt object) nog correct op beide peers? Test dat een delete geen neveneffect heeft op andere objecten.',
-  'S10-concurrent-link':   'Alice en Bob roepen gelijktijdig <code>linkObject(child, parent-A)</code> resp. <code>linkObject(child, parent-B)</code> aan. Convergeert <code>parentId</code> naar één waarde? En zijn ook de <code>childIds</code>-arrays op de ouders consistent?',
-  'S10-link-vs-unlink':    'Alice ontkoppelt een kind van zijn ouder (<code>unlinkObject</code>), Bob koppelt hetzelfde kind aan een nieuwe ouder. Na sync: is <code>parentId</code> consistent op beide peers?',
-  'S11-stress':            'Stresstest met 6 gelijktijdige edits: Alice past 4 properties aan (positie, rotatie, schaal, kleur), Bob past er 2 aan (kleur en rotatie — <em>beide overlappen</em> met Alice). Hoeveel van de 6 bedoelde wijzigingen overleven? En welke properties veroorzaken conflicten?',
-  'S12-undo-vs-move':      'Het object staat op positie [5,5,5]. Alice "ondoet" de laatste bewerking en zet het terug op [0,0,0], Bob verplaatst verder naar [10,10,10]. Gelijktijdig. Wie wint: de undo of de vooruitgang? Illustreert dat geen enkele variant natively "undo" begrijpt — het is gewoon een LWW-conflict op positie.',
-  'S13-sequential-chain':  'Alice doet 4 opeenvolgende offline wijzigingen aan <em>verschillende</em> properties (positie, rotatie, schaal, kleur), Bob doet 1 wijziging aan de positie (conflict!). Na sync: overleven Alice\'s 3 niet-conflicterende properties? En wie wint bij de positie?',
+  'S1-position': 'Alice and Bob concurrently update the <em>position</em> of the same object. This is a direct collision on the same property — only one value can win. The test measures convergence and which value survives.',
+  'S1-color':    'Alice and Bob concurrently update the <em>color</em> of the same object. Like S1-position, this is a direct collision. The winner is determined by LWW (Last Write Wins) based on timestamp or revision number.',
+  'S2-pos+color':  'Alice moves the object (position), Bob changes its color. These are <em>different properties</em> — there is no logical conflict. The key question: does the algorithm preserve <em>both</em> changes, or does one overwrite the other?',
+  'S2-rot+scale':  'Alice updates rotation, Bob updates scale. Again independent properties. Same as S2-pos+color but with a different property pair to confirm the behavior is general.',
+  'S3-del+move':   'Alice deletes the object while Bob moves it concurrently. Which intent wins: the deletion or the move? And are both peers in the same state afterwards?',
+  'S3-del+color':  'Alice deletes the object while Bob changes its color. Variant of S3-del+move to test whether delete always wins, or whether the object sometimes survives with the new color.',
+  'S4-concurrent-move':  'Alice and Bob concurrently call <code>moveObject(+5)</code> and <code>moveObject(+3)</code> respectively. Ideal outcome: position = 8 (both deltas applied). Variant C is designed to guarantee this via commutative delta operations.',
+  'S4-batch-move':       'Alice makes 3 consecutive <code>moveObject(+1)</code> calls while offline, Bob changes the color. Tests whether multiple sequential delta operations from one peer are preserved alongside an independent update from the other.',
+  'S5-reparent':   'Alice and Bob each attach the same child object to a different parent (<em>parent-A</em> vs. <em>parent-B</em>). Only one parent can win. The test verifies: does <code>parentId</code> converge to a single value on both peers?',
+  'S5-childIds':   'Extension of S5: in addition to the <code>parentId</code> on the child, the <code>childIds</code> arrays on the respective parents are also updated. After sync: is there cross-object consistency? i.e., does only the winning parent contain the child in its <code>childIds</code>?',
+  'S6-concurrent-create':  'Alice and Bob both create an object with the <em>same ID</em> but a different color. Does the system converge to one object? And which color wins?',
+  'S6-object-count':       'After concurrent creation of a shared ID plus unique objects per peer: does the system show the same object count on both peers? Tests object-count consistency.',
+  'S7-del-parent+edit-child': 'A child object has <code>parentId=parent</code>. Alice deletes the parent, Bob edits the child. After sync: are both peers consistent about the state of the child — and is the child potentially orphaned?',
+  'S7-orphan-on-create':   'Alice deletes a parent object while Bob simultaneously creates a child with that parent. After sync: is the child present? If so, does <code>parentId</code> reference a non-existent object (orphan)?',
+  'S8-batch3+single':      'Alice makes 3 offline updates to <em>different</em> properties (position, rotation, scale), Bob makes 1 update to color. Are all 4 updates preserved? Tests whether the variant handles multiple concurrent property changes correctly.',
+  'S8-chain-same-prop':    'Alice changes the color 3 times in sequence (offline), Bob changes the color once. After sync: which color wins? The test expects Alice\'s last color (#333333) or Bob\'s (#0000FF) — not an intermediate value.',
+  'S9-double-delete':      'Both peers delete the same object at the same time. Does the system converge to "deleted"? This tests idempotency: a double delete must not cause an error or inconsistency.',
+  'S9-untouched-neighbour':'After the double delete of <em>box-1</em>: is <em>box-2</em> (an untouched object) still correct on both peers? Tests that a delete has no side-effect on unrelated objects.',
+  'S10-concurrent-link':   'Alice and Bob concurrently call <code>linkObject(child, parent-A)</code> and <code>linkObject(child, parent-B)</code>. Does <code>parentId</code> converge to a single value? Are the <code>childIds</code> arrays on both candidate parents consistent?',
+  'S10-link-vs-unlink':    'Alice detaches a child from its parent (<code>unlinkObject</code>), Bob attaches the same child to a new parent. After sync: is <code>parentId</code> consistent on both peers?',
+  'S11-stress':            'Stress test with 6 concurrent edits: Alice updates 4 properties (position, rotation, scale, color), Bob updates 2 (color and rotation — <em>both overlap</em> with Alice). How many of the 6 intended changes survive? Which properties cause conflicts?',
+  'S12-undo-vs-move':      'The object is at position [5,5,5]. Alice "undoes" the last edit and resets it to [0,0,0], Bob moves further to [10,10,10]. Concurrently. Who wins: the undo or the progress? Illustrates that no variant natively understands "undo" — it is simply a LWW conflict on position.',
+  'S13-sequential-chain':  'Alice makes 4 consecutive offline changes to <em>different</em> properties (position, rotation, scale, color), Bob makes 1 change to position (conflict!). After sync: do Alice\'s 3 non-conflicting properties survive? And who wins the position?',
   'S14-clean-split':
-    '<strong>★ Kerndemonstratie: A vs. B/C/D.</strong> Alice en Bob bewerken elk twee <em>volledig verschillende</em> properties — nul overlap. ' +
-    'Alice wijzigt positie + rotatie, Bob wijzigt schaal + kleur. ' +
-    'Variant A slaat het hele object als één blob op: de verliezende write verdwijnt compleet, inclusief zijn twee niet-conflicterende properties. ' +
-    'Varianten B, C en D bewaren alle 4 eigenschappen omdat ze per property bijhouden wie wanneer wat schreef. ' +
-    '<em>Dit is het beste enkelvoudige scenario om het voordeel van property-level granulariteit te demonstreren.</em>',
+    '<strong>★ Key demonstration: A vs. B/C/D.</strong> Alice and Bob each edit two <em>completely different</em> properties — zero overlap. ' +
+    'Alice changes position + rotation, Bob changes scale + color. ' +
+    'Variant A stores the entire object as a single blob: the losing write disappears entirely, including its two non-conflicting properties. ' +
+    'Variants B, C, and D preserve all 4 properties because they track changes at the property level. ' +
+    '<em>This is the best single scenario to demonstrate the advantage of property-level granularity.</em>',
   'S15-nudge-accumulation':
-    '<strong>★ Kerndemonstratie: A/B/D vs. C.</strong> Alice "nudget" het object 3× door [+1,0,0], Bob nudget 2× door [+1,0,0] — allemaal offline. ' +
-    'Ideale uitkomst: x = 5 (alle vijf nudges opgeteld). ' +
-    'Variant C slaat elke <code>moveObject</code>-aanroep op als een aparte delta in een Y.Array log; bij sync worden alle deltas gesommeerd — volgorde maakt niet uit. ' +
-    'Varianten A, B en D gebruiken LWW op de positie-property: de laatste absolute waarde wint. Eén peer\'s nudges overschrijven die van de ander. ' +
-    '<em>Dit is het beste scenario om Variant C\'s unieke delta-commutatief gedrag te demonstreren.</em>',
+    '<strong>★ Key demonstration: A/B/D vs. C.</strong> Alice nudges the object 3× by [+1,0,0], Bob nudges 2× by [+1,0,0] — all offline. ' +
+    'Ideal outcome: x = 5 (all five nudges summed). ' +
+    'Variant C stores each <code>moveObject</code> call as a separate delta in a Y.Array log; on sync all deltas are summed — order does not matter. ' +
+    'Variants A, B, and D use LWW on the position property: the last absolute value wins. One peer\'s nudges overwrite the other\'s. ' +
+    '<em>This is the best scenario to demonstrate Variant C\'s unique delta-commutative behaviour.</em>',
 };
 
-/** Per variant, per verdict: explain WHY */
 const VARIANT_WHY = {
   A: {
-    'BOTH PRESERVED': 'Variant A bewaart beide intents doordat de properties in dit geval in dezelfde write zitten, of omdat de winnende write toevallig dezelfde waarden bevat.',
-    'INTENT LOST':    'Variant A slaat het hele object als één Y.Map-entry op. Bij elke <code>updateObject()</code> wordt het volledige object overschreven. Als Alice positie schrijft en Bob kleur schrijft, concurreren die twee writes voor het <em>volledige</em> object. De laatste timestamp wint en overschrijft alle properties — ook de property die de verliezende peer had aangepast maar niet had bedoeld te overschrijven.',
-    'PARTIAL':        'Variant A: meerdere concurrent writes concurreren voor het volledige object. De winnende write bevat sommige van de gewenste waarden toevallig, maar niet alle.',
-    null:             'Variant A convergeert, maar er is geen intent-score beschikbaar voor dit scenario.',
+    'BOTH PRESERVED': 'Variant A preserves both intents because the properties happen to be in the same write, or because the winning write coincidentally contains the same values.',
+    'INTENT LOST':    'Variant A stores the entire object as a single Y.Map entry. Every <code>updateObject()</code> call overwrites the full object. When Alice writes position and Bob writes color, those two writes compete for the <em>entire</em> object. The higher timestamp wins and overwrites all properties — including the property the losing peer changed but did not intend to overwrite.',
+    'PARTIAL':        'Variant A: multiple concurrent writes compete for the full object. The winning write happens to contain some of the desired values, but not all.',
+    null:             'Variant A converges, but no intent score is available for this scenario.',
   },
   B: {
-    'BOTH PRESERVED': 'Variant B slaat elke property op in een eigen geneste Y.Map-entry. Alice\'s write naar <em>positie</em> en Bob\'s write naar <em>kleur</em> raken nooit hetzelfde slot — er is geen conflict. Beide intents overleven automatisch.',
-    'INTENT LOST':    'Variant B gebruikt per-property LWW. Wanneer twee peers <em>dezelfde property</em> concurrent aanpassen, wint de write met de hoogste timestamp. De verliezende write verdwijnt volledig — er is geen merge mogelijk voor scalaire waarden zoals kleur of positie.',
-    'PARTIAL':        'Variant B: sommige properties werden concurrent geschreven en verloren via LWW. Niet-conflicterende properties werden bewaard.',
-    null:             'Variant B convergeert, maar er is geen intent-score beschikbaar voor dit scenario.',
+    'BOTH PRESERVED': 'Variant B stores each property in its own nested Y.Map entry. Alice\'s write to <em>position</em> and Bob\'s write to <em>color</em> never touch the same slot — there is no conflict. Both intents survive automatically.',
+    'INTENT LOST':    'Variant B uses per-property LWW. When two peers concurrently update the <em>same property</em>, the write with the higher timestamp wins. The losing write is discarded entirely — there is no merge possible for scalar values such as color or position.',
+    'PARTIAL':        'Variant B: some properties were written concurrently and lost via LWW. Non-conflicting properties were preserved.',
+    null:             'Variant B converges, but no intent score is available for this scenario.',
   },
   C: {
-    'BOTH PRESERVED': 'Variant C: voor <code>moveObject</code> zijn deltas commutatief — ze worden als losse ops in een Y.Array opgeslagen en altijd allemaal toegepast, ongeacht volgorde. Voor <code>updateObject</code> gebruikt Variant C property-level LWW, net als B.',
-    'INTENT LOST':    'Variant C gebruikt <code>updateObject</code> met property-level LWW voor absolute waarden. Concurrent schrijven naar dezelfde property → één verliest. Voor <code>moveObject</code> deltas zou dit niet optreden, maar in dit scenario werden absolute waarden geschreven.',
-    'PARTIAL':        'Variant C: delta-ops (moveObject) zijn commutatief en bewaard. Absolute waarde-conflicten (updateObject op dezelfde property) worden via LWW opgelost en verliezen één intent.',
-    null:             'Variant C convergeert, maar er is geen intent-score beschikbaar voor dit scenario.',
+    'BOTH PRESERVED': 'Variant C: for <code>moveObject</code>, deltas are commutative — they are stored as individual ops in a Y.Array and always all applied, regardless of order. For <code>updateObject</code>, Variant C uses property-level LWW, just like B.',
+    'INTENT LOST':    'Variant C uses property-level LWW for absolute values written via <code>updateObject</code>. Concurrent writes to the same property → one loses. For <code>moveObject</code> deltas this would not occur, but in this scenario absolute values were written.',
+    'PARTIAL':        'Variant C: delta ops (moveObject) are commutative and preserved. Absolute value conflicts (updateObject on the same property) are resolved via LWW and lose one intent.',
+    null:             'Variant C converges, but no intent score is available for this scenario.',
   },
   D: {
-    'BOTH PRESERVED': 'Variant D stuurt operaties naar een centrale OT-server. De <code>transform()</code>-functie zorgt dat onafhankelijke operaties op verschillende properties altijd beide worden bewaard — dit is eigenschap TP1 van Operational Transformation.',
-    'INTENT LOST':    'Variant D volgt het "eerst bij server wint"-principe. De tweede operatie die de server ontvangt, wordt getransformeerd t.o.v. de eerste. Bij een conflict op dezelfde property wint de eerste — de tweede verliest zijn intent. Dit is deterministisch en auditeerbaar.',
-    'PARTIAL':        'Variant D: de OT-server transformeert operaties. Onafhankelijke properties worden bewaard. Conflicterende properties volgen "eerste bij server wint".',
-    null:             'Variant D convergeert, maar er is geen intent-score beschikbaar voor dit scenario.',
+    'BOTH PRESERVED': 'Variant D sends operations to a central OT server. The <code>transform()</code> function ensures that independent operations on different properties are always both preserved — this is transformation property TP1 from Operational Transformation.',
+    'INTENT LOST':    'Variant D follows a "first to server wins" policy. The second operation received by the server is transformed against the first. On a conflict for the same property, the first wins — the second loses its intent. This is deterministic and fully auditable.',
+    'PARTIAL':        'Variant D: the OT server transforms operations. Independent properties are preserved. Conflicting properties follow "first to server wins".',
+    null:             'Variant D converges, but no intent score is available for this scenario.',
   },
 };
 
 const S_TITLES = {
-  S1:  'S1 — Zelfde property concurrent',
-  S2:  'S2 — Verschillende properties concurrent',
+  S1:  'S1 — Same property, concurrent edit',
+  S2:  'S2 — Different properties, concurrent edit',
   S3:  'S3 — Delete vs. update',
   S4:  'S4 — Concurrent moveObject (delta)',
   S5:  'S5 — Concurrent reparenting',
-  S6:  'S6 — Concurrent object aanmaken (zelfde ID)',
-  S7:  'S7 — Ouder verwijderd terwijl kind bewerkt',
-  S8:  'S8 — Batch ops vs. enkele op',
-  S9:  'S9 — Dubbele delete (idempotentie)',
+  S6:  'S6 — Concurrent object creation (same ID)',
+  S7:  'S7 — Parent deleted while child edited',
+  S8:  'S8 — Batch ops vs. single op',
+  S9:  'S9 — Double delete (idempotency)',
   S10: 'S10 — Concurrent linkObject',
   S11: 'S11 — Multi-property stress',
-  S12: 'S12 — Undo vs. verdere verplaatsing',
-  S13: 'S13 — Sequentiële keten + concurrent',
-  S14: 'S14 ★ — Schone split: 4 properties, 0 overlap (A vs B/C/D)',
-  S15: 'S15 ★ — Nudge-accumulatie: delta vs. LWW (A/B/D vs C)',
+  S12: 'S12 — Undo vs. continued move',
+  S13: 'S13 — Sequential chain + concurrent',
+  S14: 'S14 ★ — Clean 4-property split, 0 overlap (A vs B/C/D)',
+  S15: 'S15 ★ — Nudge accumulation: delta vs. LWW (A/B/D vs C)',
 };
 
 // ---------------------------------------------------------------------------
@@ -231,7 +222,6 @@ const S_TITLES = {
 
 const scenarios = [...new Set(results.map(r => r.scenario))];
 
-// Matrix: scenario → variant → result
 const matrix = {};
 for (const r of results) {
   if (!matrix[r.scenario]) matrix[r.scenario] = {};
@@ -242,7 +232,6 @@ const summaryMatch = clean.match(/Tests\s+(\d+) passed[^\n]*\((\d+)\)/);
 const passed = summaryMatch ? parseInt(summaryMatch[1]) : '?';
 const total  = summaryMatch ? parseInt(summaryMatch[2]) : '?';
 
-// Group scenarios by S-number
 function sGroup(scenario) {
   const m = scenario.match(/^(S\d+)/);
   return m ? m[1] : 'other';
@@ -281,7 +270,6 @@ function intentBar(score) {
   return `<span style="color:${color};font-weight:700">${score}%</span>`;
 }
 
-/** Format a value for display — shorten long arrays/strings */
 function fmtVal(v) {
   if (v === null || v === undefined) return '<em style="color:#6b7280">null</em>';
   const s = JSON.stringify(v);
@@ -289,11 +277,6 @@ function fmtVal(v) {
   return esc(s);
 }
 
-/**
- * Build a property diff table from the [DETAIL] data.
- *
- * Shows each intended property, the final value, and ✓/✗ per peer.
- */
 function buildDiffTable(detail) {
   if (!detail) return '';
 
@@ -302,7 +285,6 @@ function buildDiffTable(detail) {
   const fs = detail.finalState    ?? {};
   const is = detail.initialState  ?? {};
 
-  // Collect all property keys involved
   const allKeys = [...new Set([...Object.keys(ai), ...Object.keys(bi)])];
   if (allKeys.length === 0) return '';
 
@@ -315,7 +297,6 @@ function buildDiffTable(detail) {
     const aHas   = k in ai;
     const bHas   = k in bi;
 
-    // Determine if the intent was preserved
     let aCheck = '', bCheck = '';
     if (aHas) {
       const preserved = JSON.stringify(final) === JSON.stringify(aWanted);
@@ -352,19 +333,18 @@ function buildDiffTable(detail) {
       <thead>
         <tr style="background:#0f172a;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.05em">
           <th style="padding:5px 10px;text-align:left">Property</th>
-          <th style="padding:5px 10px">Begintoestand</th>
-          <th style="padding:5px 10px;color:#c084fc">Alice wilde</th>
+          <th style="padding:5px 10px">Initial</th>
+          <th style="padding:5px 10px;color:#c084fc">Alice intended</th>
           <th style="padding:5px 10px;color:#c084fc">✓</th>
-          <th style="padding:5px 10px;color:#60a5fa">Bob wilde</th>
+          <th style="padding:5px 10px;color:#60a5fa">Bob intended</th>
           <th style="padding:5px 10px;color:#60a5fa">✓</th>
-          <th style="padding:5px 10px">Eindwaarde</th>
+          <th style="padding:5px 10px">Final value</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>`;
 }
 
-/** Build the WHY explanation for a variant+verdict combination */
 function buildWhyBox(variant, verdict) {
   const why = (VARIANT_WHY[variant] ?? {})[verdict] ?? (VARIANT_WHY[variant] ?? {})[null] ?? '';
   if (!why) return '';
@@ -372,19 +352,19 @@ function buildWhyBox(variant, verdict) {
   const border = verdict === 'BOTH PRESERVED' ? '#166534' : verdict === 'INTENT LOST' ? '#7f1d1d' : '#78350f';
   return `
     <div style="background:${color};border-left:3px solid ${border};padding:10px 14px;border-radius:0 6px 6px 0;margin-top:10px;font-size:13px;line-height:1.6;color:#e5e7eb">
-      <strong style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af">Waarom?</strong><br>
+      <strong style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af">Why?</strong><br>
       ${why}
     </div>`;
 }
 
 function scoreRow(scenario, variant, r, detail) {
-  if (!r) return `<tr><td colspan="6" style="color:#4b5563;padding:6px 10px">geen data</td></tr>`;
+  if (!r) return `<tr><td colspan="6" style="color:#4b5563;padding:6px 10px">no data</td></tr>`;
 
   const conv  = r.converged
-    ? '<span style="color:#22c55e">✓ ja</span>'
-    : '<span style="color:#ef4444">✗ NEE</span>';
+    ? '<span style="color:#22c55e">✓ yes</span>'
+    : '<span style="color:#ef4444">✗ NO</span>';
 
-  const v = r.verdict ?? (r.aliceScore === null && r.bobScore === null ? '(geen score)' : '');
+  const v = r.verdict ?? (r.aliceScore === null && r.bobScore === null ? '(no score)' : '');
   const vColor = r.verdict === 'BOTH PRESERVED' ? '#22c55e'
                : r.verdict === 'INTENT LOST'    ? '#ef4444'
                : r.verdict === 'PARTIAL'         ? '#eab308'
@@ -393,7 +373,6 @@ function scoreRow(scenario, variant, r, detail) {
   const diffTable = buildDiffTable(detail);
   const whyBox    = buildWhyBox(variant, r.verdict);
 
-  // Unique ID for the toggle
   const uid = `detail-${variant}-${scenario.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
   const expandLink = (diffTable || whyBox)
@@ -429,7 +408,7 @@ const matrixRows = scenarios.map(s => {
     const score = r && (r.aliceScore !== null || r.bobScore !== null)
       ? `<div style="font-size:10px;margin-top:2px;opacity:.8">${r.aliceScore ?? '—'}% / ${r.bobScore ?? '—'}%</div>`
       : '';
-    const tip = r ? `converged=${r.converged ? '✓' : '✗'} | ${r.note || r.verdict || ''}` : 'geen data';
+    const tip = r ? `converged=${r.converged ? '✓' : '✗'} | ${r.note || r.verdict || ''}` : 'no data';
     return `<td title="${esc(tip)}" style="background:${c.bg};color:${c.text};text-align:center;padding:8px 4px;font-size:12px;font-weight:600;min-width:80px">${c.label}${score}</td>`;
   }).join('');
   return `<tr><td style="padding:8px 12px;font-size:13px;color:#d1d5db;white-space:nowrap">${label}</td>${cells}</tr>`;
@@ -492,14 +471,14 @@ const variantCards = VARIANTS.map(v => {
       <div style="font-size:13px;color:#9ca3af;margin-bottom:12px">${VARIANT_LABELS[v].split('—')[1].trim()}</div>
       <div style="font-size:12px;color:#6b7280;margin-bottom:12px;line-height:1.5">${VARIANT_DESC[v]}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-        <span style="background:#14532d;color:#86efac;padding:3px 8px;border-radius:4px;font-size:12px">✓ ${preserved} bewaard</span>
-        <span style="background:#7f1d1d;color:#fca5a5;padding:3px 8px;border-radius:4px;font-size:12px">✗ ${lost} verloren</span>
-        ${partial > 0 ? `<span style="background:#78350f;color:#fde68a;padding:3px 8px;border-radius:4px;font-size:12px">~ ${partial} gedeeltelijk</span>` : ''}
+        <span style="background:#14532d;color:#86efac;padding:3px 8px;border-radius:4px;font-size:12px">✓ ${preserved} preserved</span>
+        <span style="background:#7f1d1d;color:#fca5a5;padding:3px 8px;border-radius:4px;font-size:12px">✗ ${lost} lost</span>
+        ${partial > 0 ? `<span style="background:#78350f;color:#fde68a;padding:3px 8px;border-radius:4px;font-size:12px">~ ${partial} partial</span>` : ''}
       </div>
       <div style="background:#111827;border-radius:4px;height:8px;overflow:hidden">
         <div style="background:${barColor};width:${pct}%;height:100%"></div>
       </div>
-      <div style="font-size:11px;color:#6b7280;margin-top:4px">${pct}% van scorable scenarios: beide intents bewaard</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px">${pct}% of scorable scenarios: both intents preserved</div>
     </div>`;
 }).join('');
 
@@ -507,10 +486,10 @@ const variantCards = VARIANTS.map(v => {
 // 8. Assemble full HTML
 // ---------------------------------------------------------------------------
 
-const now = new Date().toLocaleString('nl-BE');
+const now = new Date().toLocaleString('en-GB');
 
 const html = `<!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -540,14 +519,14 @@ const html = `<!DOCTYPE html>
   <div style="margin-bottom:32px">
     <h1>Conflict Resolution — Test Report</h1>
     <p style="color:#6b7280;font-size:14px">
-      Gegenereerd op ${now}
+      Generated on ${now}
       &nbsp;·&nbsp;
-      <span style="color:${passed === total ? '#22c55e' : '#ef4444'}">${passed}/${total} tests geslaagd</span>
+      <span style="color:${passed === total ? '#22c55e' : '#ef4444'}">${passed}/${total} tests passed</span>
     </p>
   </div>
 
   <!-- Variant cards -->
-  <h2>Varianten</h2>
+  <h2>Variants</h2>
   <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:40px">
     ${variantCards}
   </div>
@@ -555,8 +534,8 @@ const html = `<!DOCTYPE html>
   <!-- Matrix heatmap -->
   <h2>Scenario Matrix</h2>
   <p style="color:#6b7280;font-size:13px;margin-bottom:12px">
-    Rij = scenario, kolom = variant. Hover over een cel voor de note.
-    Groen = beide intents bewaard · Rood = intent verloren · Geel = gedeeltelijk · Blauw = enkel convergentie
+    Row = scenario, column = variant. Hover over a cell for the note.
+    Green = both intents preserved · Red = intent lost · Yellow = partial · Blue = convergence only
   </p>
   <div style="overflow-x:auto;margin-bottom:12px">
     <table style="border-collapse:separate;border-spacing:2px">
@@ -572,30 +551,30 @@ const html = `<!DOCTYPE html>
 
   <!-- Legend -->
   <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:40px;font-size:12px;color:#9ca3af">
-    <span><span class="legend-dot" style="background:#14532d"></span>BOTH — beide intents bewaard</span>
-    <span><span class="legend-dot" style="background:#7f1d1d"></span>LOST — minstens één intent verloren</span>
-    <span><span class="legend-dot" style="background:#78350f"></span>PARTIAL — gedeeltelijk bewaard</span>
-    <span><span class="legend-dot" style="background:#1e3a5f"></span>CONV — enkel convergentie gemeten</span>
-    <span><span class="legend-dot" style="background:#374151"></span>— — geen data</span>
+    <span><span class="legend-dot" style="background:#14532d"></span>BOTH — both intents preserved</span>
+    <span><span class="legend-dot" style="background:#7f1d1d"></span>LOST — at least one intent lost</span>
+    <span><span class="legend-dot" style="background:#78350f"></span>PARTIAL — partially preserved</span>
+    <span><span class="legend-dot" style="background:#1e3a5f"></span>CONV — convergence only</span>
+    <span><span class="legend-dot" style="background:#374151"></span>— — no data</span>
   </div>
 
   <!-- Detail sections -->
   <h2>Scenario Details</h2>
   <p style="color:#6b7280;font-size:13px;margin-bottom:20px">
-    Klik op een scenariogroep om de subtests te tonen.
-    Klik op <span style="color:#6366f1">▼ detail</span> bij een variant-rij om de property-diff en verklaring te openen.
+    Click a scenario group to expand.
+    Click <span style="color:#6366f1">▼ detail</span> on a variant row to view the property diff and explanation.
   </p>
   ${detailSections}
 
   <!-- Raw output -->
   <details style="margin-top:32px">
     <summary style="cursor:pointer;padding:12px 16px;background:#1f2937;border-radius:8px;color:#6b7280;font-size:14px;list-style:none;display:flex;align-items:center;gap:8px">
-      <span style="color:#4b5563">▶</span> Ruwe test output
+      <span style="color:#4b5563">▶</span> Raw test output
     </summary>
     <pre style="background:#0f172a;color:#94a3b8;font-size:11px;padding:16px;border-radius:8px;overflow-x:auto;margin-top:8px;line-height:1.6;white-space:pre-wrap">${clean.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
   </details>
 
-  <p style="margin-top:32px;color:#374151;font-size:12px;text-align:center">Bachelorproef — Scene-aware Collaborative 3D Editor</p>
+  <p style="margin-top:32px;color:#374151;font-size:12px;text-align:center">Bachelor's Thesis — Scene-aware Collaborative 3D Editor</p>
 </body>
 </html>`;
 
@@ -603,7 +582,7 @@ const html = `<!DOCTYPE html>
 // 9. Write output
 // ---------------------------------------------------------------------------
 
-const outPath = path.resolve(__dirname, '..', 'test-report.html');
+const outPath = path.resolve(__dirname, '..', 'test-report-en.html');
 fs.writeFileSync(outPath, html, 'utf8');
 console.log(`\nReport written to: ${outPath}`);
 console.log(`Open in browser:   start "" "${outPath}"`);
